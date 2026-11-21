@@ -24,3 +24,4 @@ modules.order
 .tmp_versions/
 # audio captures
 *.wav
+.work/

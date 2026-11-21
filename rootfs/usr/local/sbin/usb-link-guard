@@ -1,0 +1,18 @@
+#!/bin/sh
+# douglas: keep the USB-ethernet debug link alive. If the relay (10.42.0.1) stops
+# answering, re-pull the gadget (forces host re-enumeration); after 6 minutes
+# without contact, reboot so the link always comes back.
+UDC=/sys/class/udc/musb-hdrc.2.auto
+fails=0; lost=0
+while :; do
+  sleep 20
+  if ping -c1 -W3 10.42.0.1 >/dev/null 2>&1; then fails=0; lost=0; continue; fi
+  fails=$((fails+1)); lost=$((lost+20))
+  if [ $fails -ge 2 ]; then
+    echo "usb-link-guard: relay unreachable ${lost}s, re-pulling gadget" > /dev/kmsg
+    echo disconnect > $UDC/soft_connect 2>/dev/null; sleep 2; echo connect > $UDC/soft_connect 2>/dev/null
+    sleep 3; ip addr add 10.42.0.2/24 dev usb0 2>/dev/null; ip link set usb0 up 2>/dev/null
+    fails=0
+  fi
+  if [ $lost -ge 360 ]; then echo "usb-link-guard: relay lost for ${lost}s, rebooting" > /dev/kmsg; sync; reboot -f; fi
+done

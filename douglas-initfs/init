@@ -16,6 +16,20 @@ done
 
 if [ -b /dev/mmcblk0p16 ]; then
   if /bin/busybox mount -t ext4 -o rw,noatime /dev/mmcblk0p16 /mnt/root 2>&1; then
+    # --- boot self-heal: three consecutive boots that never reached the
+    # --- desktop (start-phosh touches /root/.boot-ok after 90 s) reflash the
+    # --- known-good image kept at /root/douglas-boot-good.img and reboot.
+    C=/mnt/root/root/.boot-attempts; OK=/mnt/root/root/.boot-ok; GOOD=/mnt/root/root/douglas-boot-good.img
+    if [ -f "$OK" ]; then n=1; /bin/busybox rm -f "$OK"; else n=$(/bin/busybox cat "$C" 2>/dev/null || echo 0); n=$((n + 1)); fi
+    echo "$n" > "$C"; /bin/busybox sync
+    echo "=== boot attempt $n since last good boot ==="
+    if [ "$n" -ge 3 ] && [ -f "$GOOD" ] && [ -b /dev/mmcblk0p5 ]; then
+      echo "=== SELF-HEAL: $n failed boots, reflashing /dev/mmcblk0p5 from $GOOD ==="
+      /bin/busybox dd if="$GOOD" of=/dev/mmcblk0p5 bs=1M conv=fsync 2>&1
+      /bin/busybox sync
+      echo 0 > "$C"; /bin/busybox sync
+      /bin/busybox reboot -f
+    fi
     if [ -x /mnt/root/sbin/douglas-init ]; then
       echo "=== SWITCHING ROOT TO ALPINE LINUX ON /dev/mmcblk0p16 ==="
       /bin/busybox umount /proc /sys /dev 2>/dev/null

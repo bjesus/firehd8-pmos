@@ -1,0 +1,108 @@
+#!/bin/sh
+mkdir -p /run/dbus /run/user/1000 /tmp/.X11-unix /tmp/.ICE-unix /run/NetworkManager
+chown user:user /run/user/1000
+chmod 700 /run/user/1000
+chmod 1777 /dev/shm /tmp /tmp/.X11-unix /tmp/.ICE-unix
+
+dbus-uuidgen --ensure
+if ! pidof dbus-daemon >/dev/null || [ ! -e /run/dbus/dbus.pid ] || ! kill -0 $(cat /run/dbus/dbus.pid 2>/dev/null) 2>/dev/null; then
+  rm -f /run/dbus/dbus.pid /run/dbus/system_bus_socket
+  dbus-daemon --system --fork
+fi
+
+if ! pgrep -x udevd >/dev/null; then
+  udevd --daemon
+  udevadm trigger --type=subsystems --action=add
+  udevadm trigger --type=devices --action=add
+  udevadm settle
+fi
+
+M=/root/mods/lib/modules/6.1.178+/kernel
+insmod $M/drivers/phy/mediatek/phy-mtk-mipi-dsi-drv.ko 2>/dev/null || true
+insmod $M/drivers/gpu/drm/panel/panel-amazon-douglas-nt35521.ko 2>/dev/null || true
+for f in fb_sys_fops syscopyarea sysfillrect sysimgblt cfbcopyarea cfbfillrect cfbimgblt; do insmod $M/drivers/video/fbdev/core/${f}.ko 2>/dev/null || true; done
+insmod $M/drivers/gpu/drm/drm_kms_helper.ko 2>/dev/null || true
+insmod $M/drivers/gpu/drm/drm_dma_helper.ko 2>/dev/null || true
+insmod $M/drivers/gpu/drm/mediatek/mediatek-drm.ko 2>/dev/null || true
+insmod /root/mods/douglas-keys.ko 2>/dev/null || true
+insmod /root/mods/douglas-battery.ko 2>/dev/null || true
+insmod /root/mods/douglas-alsa.ko 2>/dev/null || true
+udevadm trigger --subsystem-match=sound --action=add 2>/dev/null || true
+udevadm trigger --subsystem-match=input --action=add 2>/dev/null || true
+udevadm trigger --subsystem-match=drm --action=add 2>/dev/null || true
+udevadm settle 2>/dev/null || true
+
+# Wait for mediatek-drm to actually bind before starting the compositor.
+# mediatek-disp-ovl/rdma reference mediatek,larb, and with CONFIG_MTK_SMI
+# disabled larb0 never probes, so they sit in deferred probe until the 10 s
+# deferred_probe_timeout expires (~t=15 s) and only then bind. phoc has no
+# retry: if it starts first it dies with "Found 0 GPUs, cannot create
+# backend". A DRM *connector* node only exists once mediatek-drm has bound,
+# so that is the signal to wait for (card0/renderD128 are panfrost and
+# appear at ~t=1 s, so they must not be used here).
+i=0
+while [ $i -lt 160 ]; do
+  set -- /sys/class/drm/card*-*
+  [ -e "$1" ] && break
+  usleep 250000
+  i=$((i + 1))
+done
+if [ -e "$1" ]; then
+  echo "start-phosh: DRM connector $1 present after $((i / 4))s" >&2
+else
+fi
+udevadm trigger --subsystem-match=drm --action=add 2>/dev/null || true
+udevadm settle 2>/dev/null || true
+
+if ! pgrep -x seatd >/dev/null; then
+  rm -f /run/seatd.sock
+  seatd -g seat >/tmp/seatd.log 2>&1 &
+  i=0
+  while [ $i -lt 20 ]; do
+    [ -S /run/seatd.sock ] && break
+    usleep 100000
+    i=$((i + 1))
+  done
+fi
+
+# Use schedutil for CPU DVFS. The kernel default is 'performance' on purpose:
+# it keeps the boot at the known-good top OPP (1001 MHz) and performs no
+# transition, so a bad OPP table can never be entered before userspace runs.
+# Setting it here instead of in the kernel config keeps it revertible without
+# reflashing - just remove these lines.
+if [ -w /sys/devices/system/cpu/cpufreq/policy0/scaling_governor ]; then
+  for g in /sys/devices/system/cpu/cpufreq/policy*/scaling_governor; do
+    echo schedutil > "$g" 2>/dev/null || true
+  done
+  echo "start-phosh: cpufreq governor = $(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_governor 2>/dev/null)" >&2
+fi
+
+[ -w /sys/class/power_supply/bq24190-charger/charge_type ] && echo Fast > /sys/class/power_supply/bq24190-charger/charge_type 2>/dev/null || true
+echo 1500000 > /sys/class/power_supply/bq24190-charger/input_current_limit 2>/dev/null || true
+echo 1536000 > /sys/class/power_supply/bq24190-charger/constant_charge_current 2>/dev/null || true
+ip link set dev wlan0 address 00:08:22:38:88:fb 2>/dev/null || true
+pgrep -x wpa_supplicant >/dev/null || wpa_supplicant -u -s -O /run/wpa_supplicant >/dev/null 2>&1 &
+pgrep -x NetworkManager >/dev/null || NetworkManager >/tmp/nm.log 2>&1 &
+pgrep -x upowerd >/dev/null || /usr/libexec/upowerd >/dev/null 2>&1 &
+pgrep -x apk-polkit-server >/dev/null || /usr/libexec/apk-polkit/apk-polkit-server >/tmp/apk-polkit.log 2>&1 &
+/usr/local/sbin/sync-clock.sh &
+/usr/local/sbin/init-tier1.sh &
+
+touch /tmp/phosh.log
+chown user:user /tmp/phosh.log
+cd /home/user
+( sleep 90; touch /root/.boot-ok; sync ) &
+pgrep -f usb-link-guard >/dev/null || nohup /usr/local/sbin/usb-link-guard >/dev/null 2>&1 &
+exec su -s /bin/sh user -c '
+  export HOME=/home/user
+  export PWD=/home/user
+  cd /home/user
+  export USER=user
+  export XDG_RUNTIME_DIR=/run/user/1000
+  export XDG_SESSION_TYPE=wayland
+  export XDG_CURRENT_DESKTOP=Phosh:GNOME
+  export LIBSEAT_BACKEND=seatd
+  export WLR_BACKENDS=drm,libinput
+  export WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
+  exec dbus-run-session -- /usr/bin/phosh-session
+' >/tmp/phosh.log 2>&1

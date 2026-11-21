@@ -4,7 +4,7 @@ Companion to **`TODO.md`**, which holds the per-task, register-level detail. Thi
 file is the practical entry point: how to reach the device, how to build and
 flash, how to debug it, what works today, and what is left.
 
-Written 2026-11-21, updated the same evening. Current image: **`douglas-boot52.img`**, kernel `#25`.
+Written 2026-11-21, updated the same evening. Current image: **`douglas-boot56.img`**, kernel `#29`.
 
 ---
 
@@ -255,7 +255,7 @@ and you will only see the disabled state and draw the wrong conclusion.
 
 ## 7. What works today
 
-Kernel `#25` / `douglas-boot52.img` (boot47 + `m4u` disabled in DT + thermal calibration + no-op quirk file):
+Kernel `#29` / `douglas-boot56.img` (boot47 + `m4u` disabled + thermal calibration + display domain always-on + watchdog bark IRQ/pretimeout panic + self-healing initramfs + uinput):
 
 * **Display** `mtk-drm` 800x1280@60 DSI + **Mali-T720 Panfrost** GL ES 2.0,
   PWM backlight.
@@ -274,8 +274,9 @@ Kernel `#25` / `douglas-boot52.img` (boot47 + `m4u` disabled in DT + thermal cal
   governor driving the cpufreq cooling device through the OPP ladder.
 * **Hardware RTC** `/dev/rtc0` with working alarm, keeps time across power-off,
   and the kernel sets the system clock from it at boot.
-* **s2idle suspend/resume** works mechanically (sleeps as long as asked, wakes on
-  RTC alarm, power key armed as a wake source) but is **not usable** — see §8.
+* **s2idle suspend/resume works** (`loginctl suspend`, RTC or power-key wake): display
+  comes back on the power key, Wi-Fi is power-cycled around sleep by an elogind hook,
+  the USB debug link re-pulls itself. See §8E for the three mechanisms and caveats.
 
 ---
 
@@ -383,25 +384,46 @@ vendor kernel (TWRP, near-zero load, one core off) reports 32.6 C for its CPU zo
 the remaining gap is load, not calibration. Trips (75/85/115 C) unchanged and now
 meaningful. Proper fix for upstream would be an nvmem provider fed from the LK tag.
 
-### E. Suspend is not usable — the big one
+### E. Suspend — WORKING since 2026-11-21 night (three independent fixes)
 
-Mechanically it works, but the box dies 3–5 minutes after resume with an RCU
-stall and the watchdog resets it. Seen twice with different victims:
-`tx_thread` in the MT6625L HIF path (preceded by
-`[wlan]HifRegDump: HIF Reg 0x0 = 0x108163`), and `gsd-power`. The MT6625L
-consys/Wi-Fi vendor driver has **no suspend/resume support at all**, and after
-resume its HIF handshake fails and the thread spins.
+Each resume problem had its own cause; all three are handled:
 
-The obvious workaround is blocked: bringing Wi-Fi down first **oopses in generic
-AF_PACKET teardown** (`virt_to_folio` <- `kfree` <- `free_pg_vec` <-
-`packet_set_ring` <- `packet_release` <- `sock_close`) when `wpa_supplicant`
-exits, with no suspend involved. That is a second, independent bug in core kernel
-code and I have no theory for it.
+1. **Hard hang 40–80 s after resume** (silent, no RCU message, watchdog reset): the
+   MT6625L consys/Wi-Fi stack does not survive s2idle. It is not fixed in the driver;
+   `/etc/elogind/system-sleep/10-douglas-sleep` powers the chip off (`echo 0 >
+   /dev/wmtWifi`) before sleep and on again after. Wi-Fi comes back and NetworkManager
+   re-manages `wlan0`. Suspending with Wi-Fi powered (e.g. `echo mem > /sys/power/state`
+   bypassing elogind) still hangs; use `loginctl suspend`.
+2. **Black screen after resume**: the port runs the DSI controller on configuration
+   inherited from LK (see mtk_dsi.c: no PHY/PLL programming, panel commands stubbed).
+   DPMS off/on survives because the DSI device holds the display domain at runtime, but
+   system suspend powered the `mm` domain off and wiped that state. Fix:
+   `GENPD_FLAG_ALWAYS_ON` on `MT8163_POWER_DOMAIN_DISP` in `mtk-scpsys-mt8163.c`
+   (clocks still gate, backlight still turns off). After an RTC wake the screen stays off
+   (Phosh behaviour); the power key turns it on with live vblanks.
+3. **USB gadget dead after resume** (musb-mtk recovers the PHY but never re-pulls D+):
+   the sleep hook toggles `/sys/class/udc/musb-hdrc.2.auto/soft_connect` after resume,
+   and `/usr/local/sbin/usb-link-guard` (started by `start-phosh`) does the same whenever
+   the relay stops answering, rebooting after 6 min without contact as a last resort. A
+   kernel-side fix would call `mtk_musb_restore_gadget_pullup()` from a system-resume hook.
 
-Also open on the resume path: two `drm_wait_one_vblank` timeouts per resume from
-`mtk_drm_sys_complete`. **Not suspend-specific** — the same warning fires during
-normal running (seen with `Comm: phoc`), so it is a pre-existing display-pipeline
-issue that resume merely exercises reliably. Non-fatal.
+Verified: `loginctl suspend` + RTC wake + simulated power key (uinput, `rootfs/root/powerkey.py`)
+→ display active with ~60 vblank/s, Wi-Fi re-powered, link back, audio OK, no oops.
+Remaining cosmetic issue: two `vblank wait timed out` WARNINGs per blank (CRTC disable
+path), pre-existing and not suspend-specific.
+
+#### Safety nets added the same night (keep them)
+* **Watchdog bark IRQ**: `toprgu` has `interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL_LOW>`
+  (vendor DT says edge-falling; GICv2 rejects that and the driver then fails to probe,
+  which leaves the bootloader's watchdog unpetted → reset every ~65 s — this happened,
+  `douglas-boot53.img`). With `WATCHDOG_PRETIMEOUT_GOV_PANIC` a hang now panics at 15 s
+  and the stack lands in pstore (`/dev/watchdog0`: timeout 31, pretimeout 15, governor panic).
+* **Self-healing initramfs**: `douglas-initfs/init` counts boots in `/root/.boot-attempts`;
+  `start-phosh` touches `/root/.boot-ok` 90 s after start. Three consecutive boots without
+  the marker reflash `/root/douglas-boot-good.img` (= boot52) onto `mmcblk0p5` and reboot.
+  Update the good image when a new one has proven itself. This made unattended kernel
+  iteration safe; the reset-loop above needed a human and TWRP before it existed.
+* `CONFIG_INPUT_UINPUT=y` so the power key can be simulated remotely.
 
 ### F. Smaller / parked
 
@@ -477,7 +499,11 @@ issue that resume merely exercises reliably. Non-fatal.
 | `douglas-boot49.img` | **do not flash** — `AP_PLL_CON5=0` at boot, first boot dies (guard skips it on 2nd) |
 | `douglas-boot50.img` | boot47 + `m4u` node disabled → 10 s boot stall gone |
 | `douglas-boot51.img` | boot50 + DTS calibration words only (driver unpatched; no effect) |
-| `douglas-boot52.img` | boot50 + thermal calibration (driver + DTS). **CURRENT** |
+| `douglas-boot52.img` | boot50 + thermal calibration (driver + DTS). Known-good, also stored on the tablet as `/root/douglas-boot-good.img` |
+| `douglas-boot53.img` | **do not flash** — watchdog IRQ with edge type, driver fails to probe, reset loop |
+| `douglas-boot54.img` | boot52 + display domain always-on + watchdog bark IRQ (level) |
+| `douglas-boot55.img` | boot54 + self-healing initramfs |
+| `douglas-boot56.img` | boot55 + uinput + watchdog sysfs. **CURRENT** |
 
 ### Modules on the tablet (`/root/mods/`), each with a rollback copy
 
