@@ -8,7 +8,7 @@ what works, what is left) and **[TODO.md](TODO.md)** (register-level detail per 
 
 | Path | Contents |
 |---|---|
-| `kernel/` | the kernel port as a patch on top of [LibreEcho-Linux-6.1](https://github.com/aslater3/LibreEcho-Linux-6.1), plus the `.config` |
+| `kernel/` | the kernel port as a patch on top of [LibreEcho-Linux-6.1](https://github.com/aslater3/LibreEcho-Linux-6.1), plus the `.config`. The same port as a git branch: [bjesus/LibreEcho-Linux-6.1, branch `douglas`](https://github.com/bjesus/LibreEcho-Linux-6.1/tree/douglas) |
 | `douglas-alsa/` | ALSA driver (playback + capture) and battery/ALS modules |
 | `douglas-keys/` | Volume Up key driver |
 | `douglas-initfs/` | the real initramfs (switch_root to the rootfs) |
