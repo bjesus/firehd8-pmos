@@ -80,7 +80,7 @@ fi
 [ -w /sys/class/power_supply/bq24190-charger/charge_type ] && echo Fast > /sys/class/power_supply/bq24190-charger/charge_type 2>/dev/null || true
 echo 1500000 > /sys/class/power_supply/bq24190-charger/input_current_limit 2>/dev/null || true
 echo 1536000 > /sys/class/power_supply/bq24190-charger/constant_charge_current 2>/dev/null || true
-ip link set dev wlan0 address 00:08:22:38:88:fb 2>/dev/null || true
+# (MAC pinning removed: the driver does not support SIOCSIFHWADDR; MAC is 00:08:22:a4:b1:fe)
 pgrep -x wpa_supplicant >/dev/null || wpa_supplicant -u -s -O /run/wpa_supplicant >/dev/null 2>&1 &
 pgrep -x NetworkManager >/dev/null || NetworkManager >/tmp/nm.log 2>&1 &
 pgrep -x upowerd >/dev/null || /usr/libexec/upowerd >/dev/null 2>&1 &

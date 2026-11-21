@@ -428,6 +428,22 @@ gate the DSI clocks before the CRTC's final vblank wait (`mediatek-drm.ko` in
   iteration safe; the reset-loop above needed a human and TWRP before it existed.
 * `CONFIG_INPUT_UINPUT=y` so the power key can be simulated remotely.
 
+### Wi-Fi association — FIXED 2026-11-22 (night)
+
+Wi-Fi had silently stopped associating: a saved auto-connect network was in range at
+signal 94 but `wlan0` stayed "disconnected" and `nmcli con up` failed with "The device
+could not be readied for configuration". NM debug log: `set-hw-addr: failed to
+set-cloned MAC address to 00:08:22:38:88:FB`. The MT6625L driver has **no set-MAC
+support** (`ip link set wlan0 address ...` → `ioctl 0x8924: Not supported`), so the MAC
+"pinning" in `start-phosh` never worked and the real address is `00:08:22:a4:b1:fe`;
+any cloned-MAC setting makes NM fail. Fix: `/etc/NetworkManager/conf.d/20-mac.conf`
+sets `wifi.cloned-mac-address=preserve`, the per-profile
+`802-11-wireless.cloned-mac-address` overrides were cleared (`nmcli con modify <name>
+802-11-wireless.cloned-mac-address ""`), and the pinning line was removed from
+`start-phosh`. Association + DHCPv6 work immediately; DHCPv4 obtains a lease
+(192.168.8.157) — see TODO for an open question about the v4 address not staying on the
+interface, under investigation when the session ended.
+
 ### Bluetooth — FIXED 2026-11-22 (night), `douglas-boot57.img`
 
 Before: `hci0` existed (virtual, address 00:00:00:00:00:00, DOWN), `bluetoothctl` said
