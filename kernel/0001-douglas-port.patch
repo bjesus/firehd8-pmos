@@ -1,8 +1,8 @@
 From 83a78c5ba40a104f677211cf7aaccb64f2b5c2c3 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sat, 21 Nov 2026 22:18:42 +0100
-Subject: [PATCH] arm64: mt8163-douglas: mainline port of the Amazon Fire HD 8
- (2017)
+Subject: [PATCH 1/2] arm64: mt8163-douglas: mainline port of the Amazon Fire
+ HD 8 (2017)
 
 Built-in device tree for douglas (LK's FDT is unusable), NT35521 DSI panel,
 MT8163 thermal with DT-provided calibration words, cpufreq OPPs with the
@@ -3280,6 +3280,65 @@ index 000000000..977ccb45d
 +
 +MODULE_DESCRIPTION("Amazon Fire HD 8 (douglas) MT8163 + MT6323 audio driver");
 +MODULE_LICENSE("GPL");
+-- 
+2.56.1
+
+
+From 471771633e4a16f87e4f84e91fbde034a932c86e Mon Sep 17 00:00:00 2001
+From: Yo'av Moshe <github@yoavmoshe.com>
+Date: Sat, 21 Nov 2026 23:58:04 +0100
+Subject: [PATCH 2/2] mt8163-douglas: suspend fixes, thermal calibration,
+ watchdog bark, boot-stall fix
+
+- scpsys: keep the display power domain always on; the DSI controller runs on
+  bootloader-inherited configuration that a domain power-off at system suspend
+  destroyed (black screen after resume).
+- thermal: accept the three efuse calibration words from a DT property when
+  there is no nvmem cell, and use the vendor's MT8163 sensor banks (TS4/TSABB
+  are unfused on this device).
+- dts: disable the unsupported m4u node (removes a 10 s deferred-probe stall of
+  the display), thermal calibration words, watchdog bark interrupt so a hang
+  panics into pstore instead of resetting silently.
+- douglas-quirks: no-op by default; keeps a watchdog-register guard for risky
+  boot-time register experiments.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+---
+ arch/arm64/boot/dts/mediatek/mt8163-douglas.dts | 2 ++
+ drivers/soc/mediatek/mtk-scpsys-mt8163.c        | 7 +++++++
+ 2 files changed, 9 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
+index 46835f890..4cd041f55 100644
+--- a/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
++++ b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
+@@ -337,6 +337,8 @@ scpsys: scpsys@10006000 {
+ 		toprgu: watchdog@10007000 {
+ 			compatible = "mediatek,mt8163-rgu";
+ 			reg = <0x0 0x10007000 0x0 0x1000>;
++			/* bark IRQ, SPI 128 (vendor DT says edge, GICv2 only takes level): pretimeout -> panic -> pstore */
++			interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL_LOW>;
+ 			#reset-cells = <1>;
+ 		};
+ 
+diff --git a/drivers/soc/mediatek/mtk-scpsys-mt8163.c b/drivers/soc/mediatek/mtk-scpsys-mt8163.c
+index 250ce2dcd..417d8e192 100644
+--- a/drivers/soc/mediatek/mtk-scpsys-mt8163.c
++++ b/drivers/soc/mediatek/mtk-scpsys-mt8163.c
+@@ -446,6 +446,13 @@ static int __init scpsys_probe(struct platform_device *pdev)
+ 		 */
+ 		genpd->power_on(genpd);
+ 
++		/*
++		 * douglas: the DSI controller runs on configuration inherited from
++		 * the bootloader (see mtk_dsi.c); if this domain is powered off at
++		 * system suspend that state is lost and the panel never comes back.
++		 */
++		if (i == MT8163_POWER_DOMAIN_DISP)
++			genpd->flags |= GENPD_FLAG_ALWAYS_ON;
+ 		pm_genpd_init(genpd, NULL, false);
+ 	}
+ 
 -- 
 2.56.1
 
