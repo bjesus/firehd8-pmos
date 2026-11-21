@@ -410,8 +410,10 @@ Each resume problem had its own cause; all three are handled:
 
 Verified: `loginctl suspend` + RTC wake + simulated power key (uinput, `rootfs/root/powerkey.py`)
 → display active with ~60 vblank/s, Wi-Fi re-powered, link back, audio OK, no oops.
-Remaining cosmetic issue: two `vblank wait timed out` WARNINGs per blank (CRTC disable
-path), pre-existing and not suspend-specific.
+The former `vblank wait timed out` WARNINGs on every blank are gone: `mtk_drm_crtc.c` now
+holds a DSI power reference from hw_init to hw_fini so the bridge's post_disable cannot
+gate the DSI clocks before the CRTC's final vblank wait (`mediatek-drm.ko` in
+`/root/mods/lib/modules/.../`, backup `*.pre-dsiref-backup`).
 
 #### Safety nets added the same night (keep them)
 * **Watchdog bark IRQ**: `toprgu` has `interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL_LOW>`

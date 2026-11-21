@@ -1,7 +1,7 @@
 From 83a78c5ba40a104f677211cf7aaccb64f2b5c2c3 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sat, 21 Nov 2026 22:18:42 +0100
-Subject: [PATCH 1/3] arm64: mt8163-douglas: mainline port of the Amazon Fire
+Subject: [PATCH 1/4] arm64: mt8163-douglas: mainline port of the Amazon Fire
  HD 8 (2017)
 
 Built-in device tree for douglas (LK's FDT is unusable), NT35521 DSI panel,
@@ -3287,7 +3287,7 @@ index 000000000..977ccb45d
 From 471771633e4a16f87e4f84e91fbde034a932c86e Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sat, 21 Nov 2026 23:58:04 +0100
-Subject: [PATCH 2/3] mt8163-douglas: suspend fixes, thermal calibration,
+Subject: [PATCH 2/4] mt8163-douglas: suspend fixes, thermal calibration,
  watchdog bark, boot-stall fix
 
 - scpsys: keep the display power domain always on; the DSI controller runs on
@@ -3346,7 +3346,7 @@ index 250ce2dcd..417d8e192 100644
 From eb13032d1f32f627966958cc942c6689234f0918 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sun, 22 Nov 2026 00:26:55 +0100
-Subject: [PATCH 3/3] mt8163-connectivity: register the BlueZ HCI bridge only
+Subject: [PATCH 3/4] mt8163-connectivity: register the BlueZ HCI bridge only
  once STP is ready
 
 hci_register_dev() queues the core's setup power-on immediately; on MT8163
@@ -3459,6 +3459,78 @@ index 36d6a13eb..ab3d69021 100644
  	hci_free_dev(mtk_hci.hdev);
  	mtk_hci.hdev = NULL;
  }
+-- 
+2.56.1
+
+
+From a911117c73d542074ccdf499a7f8aa680184691a Mon Sep 17 00:00:00 2001
+From: Yo'av Moshe <github@yoavmoshe.com>
+Date: Sun, 22 Nov 2026 00:30:50 +0100
+Subject: [PATCH 4/4] drm/mediatek: douglas: keep DSI powered across the CRTC's
+ final vblank wait
+
+The bridge's post_disable gated the DSI clocks before mtk_drm_crtc_atomic_disable
+waited for its last vblank, so every screen blank (and every suspend) hit a
+one-second "vblank wait timed out" WARNING. Hold a DSI power reference from
+the CRTC (hw_init) and drop it in hw_fini, after the wait.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+---
+ drivers/gpu/drm/mediatek/mtk_drm_crtc.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
+index 6c4fe4ac8..e052dea64 100644
+--- a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
++++ b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include <linux/clk.h>
++#include <linux/of.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/mailbox_controller.h>
+ #include <linux/pm_runtime.h>
+@@ -344,6 +345,12 @@ static void ddp_cmdq_cb(struct mbox_client *cl, void *mssg)
+ }
+ #endif
+ 
++static bool mtk_crtc_comp_is_dsi(struct mtk_ddp_comp *comp)
++{
++	return comp->dev && comp->dev->of_node &&
++	       of_device_is_compatible(comp->dev->of_node, "mediatek,mt8173-dsi");
++}
++
+ static int mtk_crtc_ddp_hw_init(struct mtk_drm_crtc *mtk_crtc)
+ {
+ 	struct drm_crtc *crtc = &mtk_crtc->base;
+@@ -400,6 +407,14 @@ static int mtk_crtc_ddp_hw_init(struct mtk_drm_crtc *mtk_crtc)
+ 	 */
+ 	mtk_ddp_comp_config(mtk_crtc->ddp_comp[0], width, height, vrefresh, bpc, NULL);
+ 	mtk_ddp_comp_start(mtk_crtc->ddp_comp[0]);
++	/*
++	 * Hold a DSI power reference for the lifetime of the CRTC so the bridge's
++	 * post_disable (which runs before the CRTC's final vblank wait) does not
++	 * gate the DSI clocks; hw_fini drops it after that wait.
++	 */
++	for (i = 0; i < mtk_crtc->ddp_comp_nr; i++)
++		if (mtk_crtc_comp_is_dsi(mtk_crtc->ddp_comp[i]))
++			mtk_ddp_comp_start(mtk_crtc->ddp_comp[i]);
+ 
+ 	/* Initially configure all planes */
+ 	for (i = 0; i < mtk_crtc->layer_nr; i++) {
+@@ -432,7 +447,11 @@ static void mtk_crtc_ddp_hw_fini(struct mtk_drm_crtc *mtk_crtc)
+ 	struct drm_device *drm = mtk_crtc->base.dev;
+ 	struct drm_crtc *crtc = &mtk_crtc->base;
+ 	unsigned long flags;
++	int i;
+ 
++	for (i = 0; i < mtk_crtc->ddp_comp_nr; i++)
++		if (mtk_crtc_comp_is_dsi(mtk_crtc->ddp_comp[i]))
++			mtk_ddp_comp_stop(mtk_crtc->ddp_comp[i]);
+ 	mtk_crtc_ddp_clk_disable(mtk_crtc);
+ 	mtk_mutex_unprepare(mtk_crtc->mutex);
+ 
 -- 
 2.56.1
 
