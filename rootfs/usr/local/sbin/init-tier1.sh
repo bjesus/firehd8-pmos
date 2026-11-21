@@ -16,12 +16,14 @@ udevadm settle 2>/dev/null || true
 pgrep -x iio-sensor-proxy >/dev/null || /usr/libexec/iio-sensor-proxy >/dev/null 2>&1 &
 pgrep -x bluetoothd >/dev/null || /usr/lib/bluetooth/bluetoothd >/dev/null 2>&1 &
 (
-  sleep 4
-  hciconfig hci0 down 2>/dev/null || true
-  btmgmt --index 0 power on >/dev/null 2>&1 || true
-  btmgmt --index 0 le on >/dev/null 2>&1 || true
-  btmgmt --index 0 connectable on >/dev/null 2>&1 || true
-  btmgmt --index 0 bondable on >/dev/null 2>&1 || true
-  btmgmt --index 0 ssp on >/dev/null 2>&1 || true
-  btmgmt --index 0 name "Fire HD 8" >/dev/null 2>&1 || true
+  # hci0 is registered by the STP bridge only once the WMT transport is ready
+  # (a few seconds after boot); wait for it instead of racing it.
+  i=0; while [ ! -d /sys/class/bluetooth/hci0 ] && [ $i -lt 60 ]; do sleep 1; i=$((i+1)); done
+  sleep 2
+  timeout 20 btmgmt --index 0 power on >/dev/null 2>&1 || true
+  timeout 10 btmgmt --index 0 le on >/dev/null 2>&1 || true
+  timeout 10 btmgmt --index 0 connectable on >/dev/null 2>&1 || true
+  timeout 10 btmgmt --index 0 bondable on >/dev/null 2>&1 || true
+  timeout 10 btmgmt --index 0 ssp on >/dev/null 2>&1 || true
+  timeout 10 btmgmt --index 0 name "Fire HD 8" >/dev/null 2>&1 || true
 ) &

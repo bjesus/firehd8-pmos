@@ -4,7 +4,7 @@ Companion to **`TODO.md`**, which holds the per-task, register-level detail. Thi
 file is the practical entry point: how to reach the device, how to build and
 flash, how to debug it, what works today, and what is left.
 
-Written 2026-11-21, updated the same evening. Current image: **`douglas-boot56.img`**, kernel `#29`.
+Written 2026-11-21, updated the same evening. Current image: **`douglas-boot57.img`**, kernel `#30`.
 
 ---
 
@@ -255,13 +255,14 @@ and you will only see the disabled state and draw the wrong conclusion.
 
 ## 7. What works today
 
-Kernel `#29` / `douglas-boot56.img` (boot47 + `m4u` disabled + thermal calibration + display domain always-on + watchdog bark IRQ/pretimeout panic + self-healing initramfs + uinput):
+Kernel `#30` / `douglas-boot57.img` (boot47 + BT bridge fix + `m4u` disabled + thermal calibration + display domain always-on + watchdog bark IRQ/pretimeout panic + self-healing initramfs + uinput):
 
 * **Display** `mtk-drm` 800x1280@60 DSI + **Mali-T720 Panfrost** GL ES 2.0,
   PWM backlight.
 * **Touch** Goodix GT9271; **keys** Power + Volume Down (interrupt-driven via
   in-tree `mtk-pmic-keys`) and Volume Up (polled, `douglas-keys.ko`).
-* **Wi-Fi + Bluetooth** MT6625L (vendor consys stack), pinned MAC, DHCP, BlueZ.
+* **Wi-Fi + Bluetooth** MT6625L (vendor consys stack), pinned MAC, DHCP, BlueZ. BT works
+  since boot57 (the HCI bridge registered too early and bluetoothd never saw the adapter).
 * **Audio playback + capture** MT8163 AFE DL1/VUL + MT6323 DAC/ADC, speaker/headphone
   switching, jack detect, hardware volume, built-in mic (left channel, ACC mode).
 * **Battery + charger** bq24297 at 1.5 A + MT6323 AUXADC gauge.
@@ -425,6 +426,20 @@ path), pre-existing and not suspend-specific.
   iteration safe; the reset-loop above needed a human and TWRP before it existed.
 * `CONFIG_INPUT_UINPUT=y` so the power key can be simulated remotely.
 
+### Bluetooth — FIXED 2026-11-22 (night), `douglas-boot57.img`
+
+Before: `hci0` existed (virtual, address 00:00:00:00:00:00, DOWN), `bluetoothctl` said
+"No default controller available", `btmgmt` hung. Cause: `stp_chrdev_bt.c` called
+`hci_register_dev()` at init, before the WMT launcher had loaded firmware; the core's
+setup power-on failed and the porter's workaround (cancel the power-on work, clear
+`HCI_AUTO_OFF`) left `HCI_SETUP` set forever, so the management interface never
+announced the adapter. Fix: a delayed work polls `mtk_wcn_stp_is_ready()` and registers
+the device only then ("STP ready after 8 polls" at t≈6.7 s); the normal power-on runs,
+`bluetoothd` sees `Controller 00:00:46:81:63:01`, `btmgmt power on` succeeds, name
+"MTK MT8163 #1". `init-tier1.sh` now waits for `/sys/class/bluetooth/hci0` before the
+`btmgmt` calls (with timeouts). Suspend: the sleep hook `rfkill block`s BT before
+powering the consys chip off and unblocks it after resume; bluetoothd re-powers it.
+
 ### F. Smaller / parked
 
 * **MicroSD slot** (`TODO.md` §1) — fully specified, never attempted; parked
@@ -503,7 +518,8 @@ path), pre-existing and not suspend-specific.
 | `douglas-boot53.img` | **do not flash** — watchdog IRQ with edge type, driver fails to probe, reset loop |
 | `douglas-boot54.img` | boot52 + display domain always-on + watchdog bark IRQ (level) |
 | `douglas-boot55.img` | boot54 + self-healing initramfs |
-| `douglas-boot56.img` | boot55 + uinput + watchdog sysfs. **CURRENT** |
+| `douglas-boot56.img` | boot55 + uinput + watchdog sysfs |
+| `douglas-boot57.img` | boot56 + BlueZ HCI bridge registers after STP ready → Bluetooth works. **CURRENT** |
 
 ### Modules on the tablet (`/root/mods/`), each with a rollback copy
 

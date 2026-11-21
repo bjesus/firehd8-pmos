@@ -1,10 +1,13 @@
 #!/bin/sh
-# douglas: MT6625L consys cannot survive s2idle -> power it off/on around sleep;
-# the musb gadget does not re-enumerate after resume -> re-pull it.
+# douglas: the MT6625L consys stack (Wi-Fi + BT) cannot survive s2idle -> release
+# BT and power the chip off before sleep, power on afterwards; the musb gadget does
+# not re-enumerate after resume -> re-pull it.
 UDC=/sys/class/udc/musb-hdrc.2.auto
 case "$1" in
-  pre)  [ -c /dev/wmtWifi ] && echo 0 > /dev/wmtWifi; sleep 1 ;;
+  pre)  rfkill block bluetooth 2>/dev/null; sleep 1
+        [ -c /dev/wmtWifi ] && echo 0 > /dev/wmtWifi; sleep 1 ;;
   post) [ -c /dev/wmtWifi ] && echo 1 > /dev/wmtWifi
+        ( sleep 1; rfkill unblock bluetooth 2>/dev/null ) &
         ( sleep 2; echo disconnect > $UDC/soft_connect; sleep 2; echo connect > $UDC/soft_connect; sleep 3; ip addr add 10.42.0.2/24 dev usb0 2>/dev/null; ip link set usb0 up ) >/dev/null 2>&1 & ;;
 esac
 exit 0
