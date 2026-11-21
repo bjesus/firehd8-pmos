@@ -1,0 +1,47 @@
+cat > /root/loop2.py <<'PY'
+import mmap, os, struct, time, functools
+print = functools.partial(print, flush=True)
+f = os.open("/dev/mem", os.O_RDWR | os.O_SYNC)
+afe = mmap.mmap(f, 0x1000, mmap.MAP_SHARED, mmap.PROT_READ|mmap.PROT_WRITE, offset=0x11220000)
+sram = mmap.mmap(f, 0x9000, mmap.MAP_SHARED, mmap.PROT_READ|mmap.PROT_WRITE, offset=0x11221000)
+def r(o): return struct.unpack_from("<I", afe, o)[0]
+def w(o,v): struct.pack_into("<I", afe, o, v)
+def upd(o,mask,val): w(o, (r(o) & ~mask) | (val & mask))
+def stats(off, n):
+    words=[struct.unpack_from("<I",sram,o)[0] for o in range(off,off+n,4)]
+    return "zero=%d marker=%d other=%d sample=%s" % (sum(1 for x in words if x==0), sum(1 for x in words if x==0x7e7e7e7e), sum(1 for x in words if x not in (0,0x7e7e7e7e)), ["%08x"%x for x in words[:4]])
+for i in range(0, 0x1000, 4): struct.pack_into("<I", sram, i, ((0x2222+i//4)<<16) | (0x1111+i//4))
+w(0x40, 0x11221000); w(0x48, 0x11221fff); upd(0x14, 0xf, 0xa); upd(0x14, 1<<21, 0)
+w(0x70, 0x11223000); w(0x78, 0x11223fff); upd(0x14, 0xf<<12, 0xa<<12); upd(0x14, 1<<24, 0)
+def run(label, pre=None, post=None):
+    for o in range(0x2000, 0x3000, 4): struct.pack_into("<I", sram, o, 0x7e7e7e7e)
+    if pre: pre()
+    upd(0x28, (1<<19)|(1<<24), (1<<19)|(1<<24))
+    upd(0x10, (1<<6)|(1<<1)|1, (1<<6)|(1<<1)|1)
+    time.sleep(0.15)
+    mon = " ".join("%03x=%08x"%(o,r(o)) for o in (0xd0,0xd4,0xd8,0xdc,0xe0,0xe4))
+    time.sleep(0.15)
+    res = stats(0x2000, 0x1000)
+    upd(0x10, (1<<6)|(1<<1)|1, 0); upd(0x28, (1<<19)|(1<<24), 0)
+    if post: post()
+    print("%-28s DAC_CON0(run)=%08x %s | MON %s" % (label, 0, res, mon))
+top = r(0)
+run("baseline")
+run("TOP_CON0=0x4000", pre=lambda: w(0,0x4000), post=lambda: w(0,top))
+run("AWB 24bit conn+fetch1", pre=lambda: (upd(0x6c,(1<<5)|(1<<6),(1<<5)|(1<<6)), upd(0x3d8,3<<20,1<<20)), post=lambda: (upd(0x6c,(1<<5)|(1<<6),0), upd(0x3d8,3<<20,0)))
+run("AWB 24bit conn+fetch3", pre=lambda: (upd(0x6c,(1<<5)|(1<<6),(1<<5)|(1<<6)), upd(0x3d8,3<<20,3<<20)), post=lambda: (upd(0x6c,(1<<5)|(1<<6),0), upd(0x3d8,3<<20,0)))
+run("AWB conn24 only", pre=lambda: upd(0x6c,(1<<5)|(1<<6),(1<<5)|(1<<6)), post=lambda: upd(0x6c,(1<<5)|(1<<6),0))
+run("AWB fetch3 only", pre=lambda: upd(0x3d8,3<<20,3<<20), post=lambda: upd(0x3d8,3<<20,0))
+run("DL1 24bit src", pre=lambda: (upd(0x6c,0x1b,0x1b), upd(0x3d8,3<<16,3<<16)), post=lambda: (upd(0x6c,0x1b,0), upd(0x3d8,3<<16,0)))
+run("AWB mono", pre=lambda: upd(0x14,1<<24,1<<24), post=lambda: upd(0x14,1<<24,0))
+run("AWB rate 8k", pre=lambda: upd(0x14,0xf<<12,0), post=lambda: upd(0x14,0xf<<12,0xa<<12))
+run("MAXLEN all 5", pre=lambda: w(0x3d4,0x55555555), post=lambda: w(0x3d4,0x11111115))
+run("MINLEN 0", pre=lambda: w(0x3d0,0), post=lambda: w(0x3d0,0x33333333))
+run("PBUF 0 (no prefetch)", pre=lambda: w(0x3d8,0), post=lambda: w(0x3d8,0x3ff))
+run("MSB=0", pre=lambda: w(0xcc,0), post=lambda: w(0xcc,0x003f0000))
+run("MSB=0x3f03ff", pre=lambda: w(0xcc,0x003f03ff), post=lambda: w(0xcc,0x003f0000))
+w(0x40, 0x11221000); w(0x48, 0x11226fff)
+print("DAC_CON0 live sample during a run:", end=" ")
+upd(0x10, (1<<6)|(1<<1)|1, (1<<6)|(1<<1)|1); time.sleep(0.05); print("%08x" % r(0x10)); upd(0x10, (1<<6)|(1<<1)|1, 0)
+PY
+python3 /root/loop2.py

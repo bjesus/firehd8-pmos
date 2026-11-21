@@ -1,0 +1,3285 @@
+From 83a78c5ba40a104f677211cf7aaccb64f2b5c2c3 Mon Sep 17 00:00:00 2001
+From: Yo'av Moshe <github@yoavmoshe.com>
+Date: Sat, 21 Nov 2026 22:18:42 +0100
+Subject: [PATCH] arm64: mt8163-douglas: mainline port of the Amazon Fire HD 8
+ (2017)
+
+Built-in device tree for douglas (LK's FDT is unusable), NT35521 DSI panel,
+MT8163 thermal with DT-provided calibration words, cpufreq OPPs with the
+SY8827N external buck, MT6323 PMIC keys/RTC, watchdog suspend fix, and the
+m4u node disabled until a real IOMMU setup exists. Also a no-op quirk file
+with a watchdog-register guard for risky boot-time register experiments.
+
+See HANDOFF.md in the bjesus/firehd8-pmos repository for the full story.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+---
+ arch/arm64/boot/dts/mediatek/Makefile         |   50 +-
+ .../boot/dts/mediatek/mt8163-douglas.dts      | 1090 +++++++++++++++++
+ arch/arm64/kernel/Makefile                    |    5 +
+ arch/arm64/kernel/dtb_builtin.S               |   14 +
+ arch/arm64/kernel/head.S                      |   12 +
+ arch/arm64/kernel/psci.c                      |   67 +
+ arch/arm64/kernel/setup.c                     |  121 +-
+ drivers/clk/mediatek/Kconfig                  |    2 +-
+ drivers/clk/mediatek/clk-mt8163.c             |    2 +-
+ drivers/gpu/drm/mediatek/mtk_disp_ovl.c       |    8 +
+ drivers/gpu/drm/mediatek/mtk_drm_crtc.c       |   44 +-
+ drivers/gpu/drm/mediatek/mtk_drm_drv.c        |    7 +-
+ drivers/gpu/drm/mediatek/mtk_dsi.c            |   76 +-
+ drivers/gpu/drm/panel/Kconfig                 |    9 +
+ drivers/gpu/drm/panel/Makefile                |    1 +
+ .../drm/panel/panel-amazon-douglas-nt35521.c  |  235 ++++
+ drivers/input/touchscreen/goodix.c            |    5 +-
+ drivers/mfd/mt6397-core.c                     |   23 +-
+ drivers/misc/mediatek/Kconfig                 |    2 +-
+ .../conn_soc/common/core/wmt_ic_soc.c         |    3 +
+ .../common/mt8163/mtk_wcn_consys_hw.c         |   26 +-
+ .../conn_soc/common/mt8163/wmt_plat_alps.c    |    4 +-
+ .../drv_wlan/mt_wifi/wlan/nic/que_mgt.c       |    2 +-
+ drivers/mmc/host/mtk-sd.c                     |   51 +-
+ drivers/pinctrl/mediatek/Kconfig              |    2 +-
+ drivers/regulator/fan53555.c                  |   26 +-
+ drivers/soc/mediatek/Kconfig                  |    2 +-
+ drivers/soc/mediatek/Makefile                 |    1 +
+ drivers/soc/mediatek/douglas-quirks.c         |   72 ++
+ drivers/soc/mediatek/mtk-mmsys.c              |   31 +-
+ drivers/soc/mediatek/mtk-mutex.c              |   25 +
+ drivers/thermal/mtk_thermal.c                 |   74 +-
+ drivers/usb/musb/mediatek.c                   |    1 +
+ drivers/watchdog/mtk_wdt.c                    |   16 +-
+ init/main.c                                   |    7 +
+ kernel/printk/printk.c                        |    4 +
+ sound/soc/mediatek/Kconfig                    |    7 +
+ sound/soc/mediatek/mt8163/Makefile            |    1 +
+ sound/soc/mediatek/mt8163/mt8163-douglas.c    |  266 ++++
+ 39 files changed, 2203 insertions(+), 191 deletions(-)
+ create mode 100644 arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
+ create mode 100644 arch/arm64/kernel/dtb_builtin.S
+ create mode 100644 drivers/gpu/drm/panel/panel-amazon-douglas-nt35521.c
+ create mode 100644 drivers/soc/mediatek/douglas-quirks.c
+ create mode 100644 sound/soc/mediatek/mt8163/mt8163-douglas.c
+
+diff --git a/arch/arm64/boot/dts/mediatek/Makefile b/arch/arm64/boot/dts/mediatek/Makefile
+index 0ec90cb3e..dc639bcd9 100644
+--- a/arch/arm64/boot/dts/mediatek/Makefile
++++ b/arch/arm64/boot/dts/mediatek/Makefile
+@@ -1,49 +1 @@
+-# SPDX-License-Identifier: GPL-2.0
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt2712-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt6755-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt6779-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt6795-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt6797-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt6797-x20-dev.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt7622-rfb1.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt7622-bananapi-bpi-r64.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt7986a-rfb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt7986b-rfb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8167-pumpkin.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8173-elm.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8173-elm-hana.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8173-elm-hana-rev7.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8173-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-burnet.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-cozmo.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-damu.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-fennel-sku1.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-fennel-sku6.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-fennel-sku7.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-fennel14.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-fennel14-sku2.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-juniper-sku16.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-kappa.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-kenzo.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-willow-sku0.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-jacuzzi-willow-sku1.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-kakadu.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-kakadu-sku22.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-kodama-sku16.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-kodama-sku272.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-kodama-sku288.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-kodama-sku32.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-krane-sku0.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-kukui-krane-sku176.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8183-pumpkin.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8186-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8192-asurada-hayato-r1.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8192-asurada-spherion-r0.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8192-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8195-cherry-tomato-r1.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8195-cherry-tomato-r2.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8195-cherry-tomato-r3.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8195-demo.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8195-evb.dtb
+-dtb-$(CONFIG_ARCH_MEDIATEK) += mt8516-pumpkin.dtb
++dtb-y += mt8163-douglas.dtb
+diff --git a/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
+new file mode 100644
+index 000000000..46835f890
+--- /dev/null
++++ b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
+@@ -0,0 +1,1090 @@
++// SPDX-License-Identifier: GPL-2.0
++/*
++ * Amazon Fire HD 8 (2017) - codename "douglas"
++ * MediaTek MT8163 (4x Cortex-A53), MT6323 PMIC
++ *
++ * BOOT #1 MINIMAL DTS: core bring-up only.
++ * Goal: prove the kernel reaches userspace with full DRAM-based logging.
++ * No peripherals are declared - nothing can probe, nothing can hang us.
++ *
++ * Memory layout (verified from vendor DTB atag + /proc/iomem in TWRP):
++ *   DRAM:  [0x40000000, 0x99600000)  1.41GB total
++ *   ATF:   [0x43000000, 0x43030000)  192KB  - excluded (gap in blocks)
++ *   fb:    [0x98600000, 0x99600000)  16MB   - excluded (no display driver yet)
++ *   HOLE:  [0x98400000, 0x98600000)   2MB    - NOT in any memory node:
++ *         survives every warm reboot (verified), used for:
++ *           0x98400000 + 1MB: ramoops (console + pmsg + records)
++ *           0x98500000:       kernel stage markers (uncached writes)
++ *           0x98501000:       userspace log area (via /dev/mem from /init)
++ *
++ * The kernel is entered at EL1 non-secure by the LK bootloader, which passes
++ * its own 3.18-era DTB - the kernel overrides it with a built-in copy of
++ * this DTB (see arch/arm64/kernel/setup.c + dtb_builtin.S).
++ */
++/dts-v1/;
++
++#include <dt-bindings/input/linux-event-codes.h>
++#include <dt-bindings/thermal/thermal.h>
++#include <dt-bindings/interrupt-controller/arm-gic.h>
++#include <dt-bindings/interrupt-controller/irq.h>
++#include <dt-bindings/clock/mt8163-clk.h>
++#include <dt-bindings/power/mt8163-power.h>
++#include <dt-bindings/memory/mt8167-larb-port.h>
++#include "../../../../arm/boot/dts/mt8163-pinfunc.h"
++
++/ {
++	model = "Amazon Fire HD 8 (2017)";
++	compatible = "amazon,douglas", "mediatek,mt8163";
++	interrupt-parent = <&sysirq>;
++	#address-cells = <2>;
++	#size-cells = <2>;
++
++	aliases {
++		i2c0 = &i2c0;
++		i2c1 = &i2c1;
++		i2c2 = &i2c2;
++	};
++
++	cpus {
++		#address-cells = <1>;
++		#size-cells = <0>;
++
++		cpu0: cpu@0 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x0>;
++			enable-method = "psci";
++			clocks = <&apmixedsys CLK_APMIXED_ARMPLL>;
++			clock-names = "cpu";
++			cpu-supply = <&vproc_reg>;
++			operating-points-v2 = <&cpu_opp_table>;
++			#cooling-cells = <2>;
++		};
++		cpu1: cpu@1 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x1>;
++			enable-method = "psci";
++			clocks = <&apmixedsys CLK_APMIXED_ARMPLL>;
++			clock-names = "cpu";
++			cpu-supply = <&vproc_reg>;
++			operating-points-v2 = <&cpu_opp_table>;
++			#cooling-cells = <2>;
++		};
++		cpu2: cpu@2 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x2>;
++			enable-method = "psci";
++			clocks = <&apmixedsys CLK_APMIXED_ARMPLL>;
++			clock-names = "cpu";
++			cpu-supply = <&vproc_reg>;
++			operating-points-v2 = <&cpu_opp_table>;
++			#cooling-cells = <2>;
++		};
++		cpu3: cpu@3 {
++			device_type = "cpu";
++			compatible = "arm,cortex-a53";
++			reg = <0x3>;
++			enable-method = "psci";
++			clocks = <&apmixedsys CLK_APMIXED_ARMPLL>;
++			clock-names = "cpu";
++			cpu-supply = <&vproc_reg>;
++			operating-points-v2 = <&cpu_opp_table>;
++			#cooling-cells = <2>;
++		};
++	};
++
++	cpu_opp_table: opp-table-cpu {
++		compatible = "operating-points-v2";
++		opp-shared;
++
++		opp-600000000 {
++			opp-hz = /bits/ 64 <600000000>;
++			opp-microvolt = <1150000>;
++		};
++
++		opp-624000000 {
++			opp-hz = /bits/ 64 <624000000>;
++			opp-microvolt = <1150000>;
++		};
++
++		opp-741000000 {
++			opp-hz = /bits/ 64 <741000000>;
++			opp-microvolt = <1150000>;
++		};
++
++		opp-871000000 {
++			opp-hz = /bits/ 64 <871000000>;
++			opp-microvolt = <1150000>;
++		};
++
++		opp-1001000000 {
++			opp-hz = /bits/ 64 <1001000000>;
++			opp-microvolt = <1150000>;
++		};
++
++		opp-1050000000 {
++			opp-hz = /bits/ 64 <1050000000>;
++			opp-microvolt = <1150000>;
++		};
++	};
++
++	thermal-zones {
++		cpu_thermal: cpu-thermal {
++			polling-delay-passive = <1000>;
++			polling-delay = <1000>;
++			thermal-sensors = <&thermal>;
++
++			trips {
++				cpu_passive: cpu-passive {
++					temperature = <75000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				cpu_hot: cpu-hot {
++					temperature = <85000>;
++					hysteresis = <2000>;
++					type = "passive";
++				};
++
++				/*
++				 * Emergency backstop only. Amazon's driver puts
++				 * the thermal HW protection point at 117000
++				 * ("highest allowable TJ"), so stay below it so
++				 * software acts first; 115000 is also what
++				 * mainline mt8173.dtsi uses. Measured reality is
++				 * far away from this: ~33 C idle and a ~48 C
++				 * plateau under sustained 4-core load.
++				 */
++				cpu_crit: cpu-crit {
++					temperature = <115000>;
++					hysteresis = <2000>;
++					type = "critical";
++				};
++			};
++
++			cooling-maps {
++				/*
++				 * All four cores share one cpufreq policy
++				 * (related_cpus = 0 1 2 3), so binding the
++				 * policy leader throttles the whole cluster.
++				 */
++				map0 {
++					trip = <&cpu_hot>;
++					cooling-device = <&cpu0
++							  THERMAL_NO_LIMIT
++							  THERMAL_NO_LIMIT>;
++				};
++			};
++		};
++	};
++
++	psci {
++		compatible = "arm,psci-0.2";
++		method = "smc";
++	};
++
++	timer {
++		compatible = "arm,armv8-timer";
++		interrupt-parent = <&gic>;
++		interrupts = <GIC_PPI 13 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
++			     <GIC_PPI 14 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
++			     <GIC_PPI 11 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>,
++			     <GIC_PPI 10 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_LOW)>;
++		clock-frequency = <13000000>;
++	};
++
++	memory@40000000 {
++		device_type = "memory";
++		reg = <0x0 0x40000000 0x0 0x03000000>,	/* 48MB low block */
++		      <0x0 0x43030000 0x0 0x553D0000>;	/* 1.36GB main block */
++	};
++
++	reserved-memory {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		consys_reserved_memory: consys-reserve-memory {
++			compatible = "mediatek,consys-reserve-memory";
++			no-map;
++			size = <0x0 0x200000>;
++			alignment = <0x0 0x200000>;
++		};
++	};
++
++	/* persistent crash/boot log storage, readable from TWRP via /dev/physmem */
++	ramoops@98400000 {
++		compatible = "ramoops";
++		reg = <0x0 0x98400000 0x0 0x100000>;
++		console-size = <0x40000>;
++		pmsg-size = <0x20000>;
++		record-size = <0x20000>;
++		ftrace-size = <0x0>;
++		ecc-size = <0x10>;
++	};
++
++	chosen {
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++		bootargs = "clk_ignore_unused regulator_ignore_unused pd_ignore_unused irqchip.gicv2_force_probe=1 console=tty0 ignore_loglevel loglevel=8 panic=1";
++
++		framebuffer0: framebuffer@98600000 {
++			compatible = "simple-framebuffer";
++			reg = <0x0 0x98600000 0x0 0x1000000>;
++			width = <800>;
++			height = <1280>;
++			stride = <3200>;
++			format = "a8r8g8b8";
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++			status = "disabled";
++		};
++	};
++
++	backlight: backlight {
++		compatible = "pwm-backlight";
++		pwms = <&disp_pwm0 0 40000>;
++		brightness-levels = <0 16 32 48 64 80 96 112 128 144 160 176 192 208 224 240 255>;
++		default-brightness-level = <12>;
++		status = "okay";
++	};
++
++	sysirq: intpol-controller@10200620 {
++		compatible = "mediatek,mt6577-sysirq";
++		interrupt-controller;
++		#interrupt-cells = <3>;
++		interrupt-parent = <&gic>;
++		reg = <0x0 0x10200620 0x0 0x20>;
++	};
++
++	clk_null: clk_null {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <0>;
++	};
++
++	clk26m: clk26m {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <26000000>;
++	};
++
++	clk32k: clk32k {
++		compatible = "fixed-clock";
++		#clock-cells = <0>;
++		clock-frequency = <32000>;
++	};
++
++	reg_vmmc: regulator-vmmc {
++		compatible = "regulator-fixed";
++		regulator-name = "vmmc";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	reg_vqmmc: regulator-vqmmc {
++		compatible = "regulator-fixed";
++		regulator-name = "vqmmc";
++		regulator-min-microvolt = <1800000>;
++		regulator-max-microvolt = <1800000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	reg_vusb: regulator-vusb {
++		compatible = "regulator-fixed";
++		regulator-name = "vusb";
++		regulator-min-microvolt = <3300000>;
++		regulator-max-microvolt = <3300000>;
++		regulator-always-on;
++		regulator-boot-on;
++	};
++
++	soc {
++		compatible = "simple-bus";
++		#address-cells = <2>;
++		#size-cells = <2>;
++		ranges;
++
++		topckgen: topckgen@10000000 {
++			compatible = "mediatek,mt8163-topckgen";
++			reg = <0x0 0x10000000 0x0 0x1000>;
++			#clock-cells = <1>;
++		};
++
++		infracfg: infracfg@10001000 {
++			compatible = "mediatek,mt8163-infracfg", "syscon";
++			reg = <0x0 0x10001000 0x0 0x1000>;
++			#clock-cells = <1>;
++			#reset-cells = <1>;
++		};
++
++		scpsys: scpsys@10006000 {
++			compatible = "mediatek,mt8163-scpsys", "syscon";
++			#power-domain-cells = <1>;
++			reg = <0x0 0x10006000 0x0 0x1000>;
++			infracfg = <&infracfg>;
++			clocks = <&topckgen CLK_TOP_MFG_SEL>,
++				 <&topckgen CLK_TOP_MM_SEL>;
++			clock-names = "mfg", "mm";
++		};
++
++		toprgu: watchdog@10007000 {
++			compatible = "mediatek,mt8163-rgu";
++			reg = <0x0 0x10007000 0x0 0x1000>;
++			#reset-cells = <1>;
++		};
++
++		apmixedsys: apmixedsys@1000c000 {
++			compatible = "mediatek,mt8163-apmixedsys";
++			reg = <0x0 0x1000c000 0x0 0x1000>;
++			#clock-cells = <1>;
++		};
++
++		/*
++		 * NOTE: thermal sensor calibration is NOT wired up, so mtk_thermal.c
++		 * logs "Device not calibrated, using default calibration values"
++		 * (adc_ge = 512, vts = 260 for every sensor, degc_cali = 40,
++		 * o_slope = 0). Readings therefore track temperature correctly but
++		 * carry an absolute offset error. Measured in-system they look
++		 * sane: ~33 C idle, rising to a ~48 C plateau under sustained
++		 * 4-core load, which is why a critical trip is now included.
++		 *
++		 * Amazon's driver reads the calibration as devinfo indices 7/8/9 and
++		 * documents the backing addresses as 0x10206180/184/188, but on
++		 * MT8163 0x10206000 is "disp_config2" in the vendor DTB, not efuse.
++		 * Reading that page finds exactly two non-zero words, at +0x100
++		 * (bit0 set, degc_cali = 54, VTS = 259/256) and +0x104 (adc_ge = 561,
++		 * VTS3 = 251) - all plausible - but no valid third word anywhere in
++		 * the page, and MT8163 needs buf[2] for VTS4 and VTSABB. Feeding a
++		 * partial triplet in would zero 2 of the 5 sensors, and
++		 * mtk_thermal_bank_temperature() takes the max across a bank, so that
++		 * is worse than uniform defaults. Find the real efuse base (via the
++		 * vendor devinfo mechanism) before adding an nvmem-cells property.
++		 */
++		auxadc: auxadc@11001000 {
++			compatible = "mediatek,mt8163-auxadc",
++				     "mediatek,mt8173-auxadc";
++			reg = <0x0 0x11001000 0x0 0x1000>;
++			clocks = <&infracfg CLK_INFRA_AUXADC>;
++			clock-names = "main";
++			#io-channel-cells = <1>;
++			status = "okay";
++		};
++
++		thermal: thermal@1100b000 {
++			compatible = "mediatek,mt8163-thermal";
++			reg = <0x0 0x1100b000 0x0 0x1000>;
++			clocks = <&infracfg CLK_INFRA_THERM>,
++				 <&infracfg CLK_INFRA_AUXADC>;
++			clock-names = "therm", "auxadc";
++			mediatek,auxadc = <&auxadc>;
++			mediatek,apmixedsys = <&apmixedsys>;
++			/* efuse words idx 7/8/9 from LK chosen/atag,devinfo (this unit) */
++			mediatek,calibration-data = <0x1205006d 0x8c60c0fb 0x00000000>;
++			#thermal-sensor-cells = <0>;
++		};
++
++		pwrap: pwrap@1000d000 {
++			compatible = "mediatek,mt8163-pwrap";
++			reg = <0x0 0x1000d000 0x0 0x1000>;
++			reg-names = "pwrap";
++			interrupts = <GIC_SPI 161 IRQ_TYPE_LEVEL_HIGH>;
++			clocks = <&topckgen CLK_TOP_PMICSPI_SEL>,
++				 <&infracfg CLK_INFRA_PMIC_AP>;
++			clock-names = "spi", "wrap";
++
++			pmic: mt6323 {
++				compatible = "mediatek,mt6323";
++				interrupt-parent = <&pio>;
++				interrupts = <24 IRQ_TYPE_LEVEL_HIGH>;
++				interrupt-controller;
++				#interrupt-cells = <2>;
++
++				rtc {
++					compatible = "mediatek,mt6323-rtc";
++				};
++
++				/*
++				 * mtk-pmic-keys reads MT6323_CHRSTATUS: mask 0x2 is
++				 * PWRKEY and 0x4 is HOMEKEY - exactly the bits
++				 * douglas-keys.c was polling for Power and Volume
++				 * Down. Child order matters: first child = PWRKEY,
++				 * second = HOMEKEY. Volume Up is not on the PMIC
++				 * (it is on the SoC keypad) and stays in
++				 * douglas-keys.c.
++				 */
++				keys {
++					compatible = "mediatek,mt6323-keys";
++
++					power {
++						linux,keycodes = <KEY_POWER>;
++						wakeup-source;
++					};
++
++					volume-down {
++						linux,keycodes = <KEY_VOLUMEDOWN>;
++					};
++				};
++
++				regulators {
++					compatible = "mediatek,mt6323-regulator";
++
++					mt6323_vproc_reg: buck_vproc {
++						regulator-name = "vproc";
++						regulator-min-microvolt = <700000>;
++						regulator-max-microvolt = <1350000>;
++						regulator-ramp-delay = <12500>;
++						regulator-always-on;
++						regulator-boot-on;
++					};
++
++					mt6323_vsys_reg: buck_vsys {
++						regulator-name = "vsys";
++						regulator-min-microvolt = <1400000>;
++						regulator-max-microvolt = <2987500>;
++						regulator-ramp-delay = <25000>;
++						regulator-always-on;
++						regulator-boot-on;
++					};
++
++					mt6323_vcn18_reg: ldo_vcn18 {
++						regulator-name = "vcn18";
++						regulator-min-microvolt = <1800000>;
++						regulator-max-microvolt = <1800000>;
++						regulator-enable-ramp-delay = <216>;
++					};
++
++					mt6323_vcn28_reg: ldo_vcn28 {
++						regulator-name = "vcn28";
++						regulator-min-microvolt = <2800000>;
++						regulator-max-microvolt = <2800000>;
++						regulator-enable-ramp-delay = <185>;
++					};
++
++					mt6323_vcn33_bt_reg: ldo_vcn33_bt {
++						regulator-name = "vcn33_bt";
++						regulator-min-microvolt = <3300000>;
++						regulator-max-microvolt = <3600000>;
++						regulator-enable-ramp-delay = <185>;
++					};
++
++					mt6323_vcn33_wifi_reg: ldo_vcn33_wifi {
++						regulator-name = "vcn33_wifi";
++						regulator-min-microvolt = <3300000>;
++						regulator-max-microvolt = <3600000>;
++						regulator-enable-ramp-delay = <185>;
++					};
++
++					mt6323_vgp2_reg: ldo_vgp2 {
++						regulator-name = "vgp2";
++						regulator-min-microvolt = <3000000>;
++						regulator-max-microvolt = <3000000>;
++						regulator-enable-ramp-delay = <216>;
++					};
++				};
++			};
++		};
++
++		gic: interrupt-controller@10221000 {
++			compatible = "arm,gic-400";
++			#interrupt-cells = <3>;
++			interrupt-controller;
++			interrupt-parent = <&gic>;
++			reg = <0x0 0x10221000 0x0 0x1000>,
++			      <0x0 0x10222000 0x0 0x2000>,
++			      <0x0 0x10224000 0x0 0x2000>,
++			      <0x0 0x10226000 0x0 0x2000>;
++			interrupts = <GIC_PPI 9 (GIC_CPU_MASK_SIMPLE(4) | IRQ_TYPE_LEVEL_HIGH)>;
++		};
++
++		mmc0: mmc@11230000 {
++			compatible = "mediatek,mt8163-mmc";
++			reg = <0x0 0x11230000 0x0 0x1000>;
++			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL_LOW>;
++			clocks = <&infracfg CLK_INFRA_MSDC0>, <&clk_null>;
++			clock-names = "source", "hclk";
++			vmmc-supply = <&reg_vmmc>;
++			vqmmc-supply = <&reg_vqmmc>;
++			bus-width = <8>;
++			max-frequency = <26000000>;
++			non-removable;
++			no-sd;
++			no-sdio;
++			status = "okay";
++		};
++
++		usb0: usb@11200000 {
++			compatible = "mediatek,mt8163-usb20";
++			reg = <0x0 0x11200000 0x0 0x10000>,
++			      <0x0 0x11210000 0x0 0x10000>;
++			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL_LOW>;
++			interrupt-names = "mc";
++			dr_mode = "otg";
++			vusb-supply = <&reg_vusb>;
++			clocks = <&apmixedsys CLK_APMIXED_UNIVPLL>,
++				 <&infracfg CLK_INFRA_USB_MCU>,
++				 <&infracfg CLK_INFRA_USB>,
++				 <&infracfg CLK_INFRA_ICUSB>;
++			clock-names = "usbpll", "usbmcu", "usb", "icusb";
++			status = "okay";
++		};
++
++		btif_tx: btif_tx@11000700 {
++			compatible = "mediatek,btif_tx";
++			reg = <0x0 0x11000700 0x0 0x80>;
++			interrupts = <GIC_SPI 110 IRQ_TYPE_LEVEL_LOW>;
++		};
++
++		btif_rx: btif_rx@11000780 {
++			compatible = "mediatek,btif_rx";
++			reg = <0x0 0x11000780 0x0 0x80>;
++			interrupts = <GIC_SPI 111 IRQ_TYPE_LEVEL_LOW>;
++		};
++
++		btif: btif@1100c000 {
++			compatible = "mediatek,btif";
++			reg = <0x0 0x1100c000 0x0 0x1000>;
++			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL_LOW>;
++			clocks = <&infracfg CLK_INFRA_BTIF>, <&infracfg CLK_INFRA_AP_DMA>;
++			clock-names = "btifc", "apdmac";
++		};
++
++		syscfg_pctl_a: syscfg_pctl_a@10005000 {
++			compatible = "mediatek,mt8163-pctl-a-syscfg", "syscon";
++			reg = <0x0 0x10005000 0x0 0x1000>;
++		};
++
++		pio: pinctrl@1000b000 {
++			compatible = "mediatek,mt8163-pinctrl";
++			reg = <0x0 0x1000b000 0x0 0x1000>;
++			mediatek,pctl-regmap = <&syscfg_pctl_a>;
++			pins-are-numbered;
++			gpio-controller;
++			#gpio-cells = <2>;
++			interrupt-controller;
++			#interrupt-cells = <2>;
++			interrupts = <GIC_SPI 153 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 154 IRQ_TYPE_LEVEL_HIGH>,
++				     <GIC_SPI 155 IRQ_TYPE_LEVEL_HIGH>;
++
++			consys_pins_default: consys-default {
++			};
++
++			gpslna_pins_init: gpslna@0 {
++				pins_cmd_dat {
++					pinmux = <MT8163_PIN_6_PWRAP_SPI0_CSN2__FUNC_GPIO6>;
++					slew-rate = <0>;
++					bias-disable;
++					output-low;
++				};
++			};
++
++			gpslna_pins_oh: gpslna@1 {
++				pins_cmd_dat {
++					pinmux = <MT8163_PIN_6_PWRAP_SPI0_CSN2__FUNC_GPIO6>;
++					slew-rate = <1>;
++					output-high;
++				};
++			};
++
++			gpslna_pins_ol: gpslna@2 {
++				pins_cmd_dat {
++					pinmux = <MT8163_PIN_6_PWRAP_SPI0_CSN2__FUNC_GPIO6>;
++					slew-rate = <1>;
++					output-low;
++				};
++			};
++
++			wifi_reset_init: wifireset@0 {
++				pins_reset_dat {
++					pinmux = <MT8163_PIN_60_WB_RSTB__FUNC_WB_RSTB>,
++						 <MT8163_PIN_63_WB_SCLK__FUNC_WB_SCLK>,
++						 <MT8163_PIN_64_WB_SDATA__FUNC_WB_SDATA>,
++						 <MT8163_PIN_65_WB_SEN__FUNC_WB_SEN>;
++					input-enable;
++					bias-pull-up;
++				};
++			};
++
++			i2c0_pins_a: i2c0@0 {
++				pins1 {
++					pinmux = <MT8163_PIN_75_SDA0__FUNC_SDA0_0>,
++						 <MT8163_PIN_76_SCL0__FUNC_SCL0_0>;
++					bias-disable;
++				};
++			};
++
++			i2c1_pins_a: i2c1@0 {
++				pins1 {
++					pinmux = <MT8163_PIN_57_SDA1__FUNC_SDA1_0>,
++						 <MT8163_PIN_58_SCL1__FUNC_SCL1_0>;
++					bias-disable;
++				};
++			};
++
++			ctp_pins_default: ctp-default {
++				pins_irq {
++					pinmux = <MT8163_PIN_35_KPROW2__FUNC_GPIO35>;
++					bias-disable;
++				};
++				pins_rst {
++					pinmux = <MT8163_PIN_46_EINT14__FUNC_GPIO46>;
++					bias-pull-up;
++				};
++			};
++
++			i2c2_pins_a: i2c2@0 {
++				pins1 {
++					pinmux = <MT8163_PIN_77_SDA2__FUNC_SDA2_0>,
++						 <MT8163_PIN_78_SCL2__FUNC_SCL2_0>;
++					bias-disable;
++				};
++			};
++
++			bq24297_pins: bq24297-pins {
++				pins_int {
++					pinmux = <MT8163_PIN_23_EINT1__FUNC_GPIO23>;
++					input-enable;
++					bias-pull-up;
++				};
++				pins_chg_en {
++					pinmux = <MT8163_PIN_22_EINT0__FUNC_GPIO22>;
++					output-low;
++				};
++			};
++
++			aud_pins_default: audiodefault {
++			};
++
++			aud_pins_pmic_mode0: audpmicclk-speaker-mode0 {
++				pins_cmd_dat {
++					pinmux = <MT8163_PIN_7_AUD_CLK_MOSI__FUNC_GPIO7>,
++						 <MT8163_PIN_8_AUD_DAT_MISO__FUNC_GPIO8>,
++						 <MT8163_PIN_9_AUD_DAT_MOSI__FUNC_GPIO9>;
++				};
++			};
++
++			aud_pins_pmic_mode1: audpmicclk-speaker-mode1 {
++				pins_cmd_dat {
++					pinmux = <MT8163_PIN_7_AUD_CLK_MOSI__FUNC_AUD_CLK_MOSI>,
++						 <MT8163_PIN_8_AUD_DAT_MISO__FUNC_AUD_DAT_MISO>,
++						 <MT8163_PIN_9_AUD_DAT_MOSI__FUNC_AUD_DAT_MOSI>;
++				};
++			};
++
++			aud_pins_extamp_high: extamp-pullhigh {
++				pins_cmd_dat {
++					pinmux = <MT8163_PIN_28_EINT6__FUNC_GPIO28>;
++					slew-rate = <1>;
++					output-high;
++				};
++			};
++
++			aud_pins_extamp_low: extamp-pulllow {
++				pins_cmd_dat {
++					pinmux = <MT8163_PIN_28_EINT6__FUNC_GPIO28>;
++					slew-rate = <1>;
++					output-low;
++				};
++			};
++		};
++
++		i2c0: i2c@11007000 {
++			compatible = "mediatek,mt8173-i2c";
++			reg = <0x0 0x11007000 0x0 0x70>,
++			      <0x0 0x11000180 0x0 0x80>;
++			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL_LOW>;
++			clock-div = <8>;
++			clocks = <&infracfg CLK_INFRA_I2C0>, <&infracfg CLK_INFRA_AP_DMA>;
++			clock-names = "main", "dma";
++			clock-frequency = <400000>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c0_pins_a>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			goodix_ts@5d {
++				compatible = "goodix,gt928";
++				reg = <0x5d>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&ctp_pins_default>;
++				interrupt-parent = <&pio>;
++				interrupts = <46 IRQ_TYPE_EDGE_FALLING>;
++				irq-gpios = <&pio 35 0>;
++				reset-gpios = <&pio 46 0>;
++				AVDD28-supply = <&mt6323_vgp2_reg>;
++			};
++		};
++
++		i2c1: i2c@11008000 {
++			compatible = "mediatek,mt8173-i2c";
++			reg = <0x0 0x11008000 0x0 0x70>,
++			      <0x0 0x11000200 0x0 0x80>;
++			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL_LOW>;
++			clock-div = <8>;
++			clocks = <&infracfg CLK_INFRA_I2C1>, <&infracfg CLK_INFRA_AP_DMA>;
++			clock-names = "main", "dma";
++			clock-frequency = <400000>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c1_pins_a>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			/*
++			 * CPU VPROC buck: Silergy SY8827N (vendor DT calls it
++			 * "sym827"). Verified in-system at 0x60: ID1 = 0x81
++			 * (VENDOR 0b100, DIE_ID 1), ID2 = 0x0c (DIE_REV 12),
++			 * VSEL0 = VSEL1 = 0xac (NSEL 44 = 1.150 V), CONTROL
++			 * = 0xb0 (slew code 3 = 12.5 mV/1.2 us = 10417 uV/us).
++			 *
++			 * The chip's range is 0.600 .. 1.3875 V, but the
++			 * constraints below are deliberately narrowed to the
++			 * known-good operating point so nothing can under- or
++			 * over-volt the CPU cores. Widen only together with a
++			 * verified OPP table.
++			 */
++			vproc_reg: regulator@60 {
++				compatible = "silergy,sym827";
++				reg = <0x60>;
++				regulator-name = "ext_vproc";
++				regulator-min-microvolt = <950000>;
++				regulator-max-microvolt = <1150000>;
++				regulator-enable-ramp-delay = <400>;
++				regulator-ramp-delay = <10417>;
++				fcs,suspend-voltage-selector = <1>;
++				regulator-always-on;
++				regulator-boot-on;
++			};
++		};
++
++		mmsys: clock-controller@14000000 {
++			compatible = "mediatek,mt8163-mmsys", "syscon";
++			reg = <0x0 0x14000000 0x0 0x1000>;
++			#clock-cells = <1>;
++		};
++
++		mipi_tx0: mipi-tx@10215000 {
++			compatible = "mediatek,mt8173-mipi-tx";
++			reg = <0x0 0x10215000 0x0 0x1000>;
++			clocks = <&clk26m>;
++			#clock-cells = <0>;
++			#phy-cells = <0>;
++			clock-output-names = "mipi_tx0_pll";
++		};
++
++		smi_common: smi@14017000 {
++			compatible = "mediatek,mt8167-smi-common";
++			reg = <0x0 0x14017000 0x0 0x1000>;
++			clocks = <&mmsys CLK_MM_SMI_COMMON>, <&mmsys CLK_MM_SMI_COMMON>;
++			clock-names = "apb", "smi";
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++		};
++
++		larb0: larb@14016000 {
++			compatible = "mediatek,mt8167-smi-larb";
++			reg = <0x0 0x14016000 0x0 0x1000>;
++			mediatek,smi = <&smi_common>;
++			clocks = <&mmsys CLK_MM_SMI_LARB0>, <&mmsys CLK_MM_SMI_LARB0>;
++			clock-names = "apb", "smi";
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++		};
++
++		iommu: m4u@10205000 {
++			compatible = "mediatek,mt8167-m4u";
++			reg = <0x0 0x10205000 0x0 0x1000>;
++			interrupts = <GIC_SPI 147 IRQ_TYPE_LEVEL_LOW>;
++			mediatek,larbs = <&larb0>;
++			#iommu-cells = <1>;
++			/* No MTK_IOMMU driver in this kernel: disabled so ovl/rdma do not defer 10 s on it */
++			status = "disabled";
++		};
++
++		ovl0: ovl@14007000 {
++			compatible = "mediatek,mt8173-disp-ovl";
++			reg = <0x0 0x14007000 0x0 0x1000>;
++			interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL_LOW>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++			clocks = <&mmsys CLK_MM_DISP_OVL0>;
++			iommus = <&iommu M4U_PORT_DISP_OVL0>;
++		};
++
++		rdma0: rdma@14009000 {
++			compatible = "mediatek,mt8173-disp-rdma";
++			reg = <0x0 0x14009000 0x0 0x1000>;
++			interrupts = <GIC_SPI 186 IRQ_TYPE_LEVEL_LOW>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++			clocks = <&mmsys CLK_MM_DISP_RDMA0>;
++			iommus = <&iommu M4U_PORT_DISP_RDMA0>;
++		};
++
++		color0: color@1400c000 {
++			compatible = "mediatek,mt8167-disp-color";
++			reg = <0x0 0x1400c000 0x0 0x1000>;
++			interrupts = <GIC_SPI 189 IRQ_TYPE_LEVEL_LOW>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++			clocks = <&mmsys CLK_MM_DISP_COLOR>;
++		};
++
++		ccorr: ccorr@1400d000 {
++			compatible = "mediatek,mt8183-disp-ccorr";
++			reg = <0x0 0x1400d000 0x0 0x1000>;
++			interrupts = <GIC_SPI 190 IRQ_TYPE_LEVEL_LOW>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++			clocks = <&mmsys CLK_MM_DISP_CCORR>;
++		};
++
++		aal: aal@1400e000 {
++			compatible = "mediatek,mt8173-disp-aal";
++			reg = <0x0 0x1400e000 0x0 0x1000>;
++			interrupts = <GIC_SPI 191 IRQ_TYPE_LEVEL_LOW>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++			clocks = <&mmsys CLK_MM_DISP_AAL>;
++		};
++
++		gamma: gamma@1400f000 {
++			compatible = "mediatek,mt8173-disp-gamma";
++			reg = <0x0 0x1400f000 0x0 0x1000>;
++			interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL_LOW>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++			clocks = <&mmsys CLK_MM_DISP_GAMMA>;
++		};
++
++		dither: dither@14010000 {
++			compatible = "mediatek,mt8167-disp-dither";
++			reg = <0x0 0x14010000 0x0 0x1000>;
++			interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL_LOW>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++			clocks = <&mmsys CLK_MM_DISP_DITHER>;
++		};
++
++		dsi0: dsi@14012000 {
++			compatible = "mediatek,mt8173-dsi";
++			reg = <0x0 0x14012000 0x0 0x1000>;
++			interrupts = <GIC_SPI 195 IRQ_TYPE_LEVEL_LOW>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_DISP>;
++			clocks = <&mmsys CLK_MM_DSI_ENGINE>,
++				 <&mmsys CLK_MM_DSI_DIGITAL>,
++				 <&mipi_tx0>;
++			clock-names = "engine", "digital", "hs";
++			phys = <&mipi_tx0>;
++			phy-names = "dphy";
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			panel@0 {
++				compatible = "amazon,douglas-nt35521";
++				reg = <0>;
++				power-gpios = <&pio 43 0>;
++				reset-gpios = <&pio 83 1>;
++				backlight = <&backlight>;
++
++				port {
++					panel_in: endpoint {
++						remote-endpoint = <&dsi0_out>;
++					};
++				};
++			};
++
++			port {
++				dsi0_out: endpoint {
++					remote-endpoint = <&panel_in>;
++				};
++			};
++		};
++
++		mutex: mutex@14015000 {
++			compatible = "mediatek,mt8163-disp-mutex";
++			reg = <0x0 0x14015000 0x0 0x1000>;
++			interrupts = <GIC_SPI 177 IRQ_TYPE_LEVEL_LOW>;
++		};
++
++		disp_pwm0: pwm@14014000 {
++			compatible = "mediatek,mt8173-disp-pwm";
++			reg = <0x0 0x14014000 0x0 0x1000>;
++			#pwm-cells = <2>;
++			clocks = <&mmsys CLK_MM_DISP_PWM_26M>,
++				 <&mmsys CLK_MM_DISP_PWM_MM>;
++			clock-names = "main", "mm";
++			status = "okay";
++		};
++
++		gpu@13040000 {
++			compatible = "arm,mali-t720";
++			reg = <0x0 0x13040000 0x0 0x4000>;
++			interrupts = <GIC_SPI 227 IRQ_TYPE_LEVEL_LOW>,
++				     <GIC_SPI 226 IRQ_TYPE_LEVEL_LOW>,
++				     <GIC_SPI 225 IRQ_TYPE_LEVEL_LOW>;
++			interrupt-names = "job", "mmu", "gpu";
++			clocks = <&topckgen CLK_TOP_MFG_SEL>;
++			mali-supply = <&mt6323_vsys_reg>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_MFG>;
++		};
++
++		i2c2: i2c@11009000 {
++			compatible = "mediatek,mt8173-i2c";
++			reg = <0x0 0x11009000 0x0 0x70>,
++			      <0x0 0x11000280 0x0 0x80>;
++			interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL_LOW>;
++			clock-div = <10>;
++			clocks = <&infracfg CLK_INFRA_I2C2>, <&infracfg CLK_INFRA_AP_DMA>;
++			clock-names = "main", "dma";
++			clock-frequency = <400000>;
++			pinctrl-names = "default";
++			pinctrl-0 = <&i2c2_pins_a>;
++			#address-cells = <1>;
++			#size-cells = <0>;
++			status = "okay";
++
++			/*
++			 * PCB temperature sensors (vendor DTB: tmp103-sensor@70
++			 * /71/72). Kept disabled: tested on this board, nothing
++			 * ACKs at 0x70/0x71/0x72 on this bus while 0x18 (bma253)
++			 * and 0x6b (charger) do, so the sensors are either
++			 * unpowered or not fitted. That NAK is what the
++			 * "tmp103 2-0070: error writing config register" probe
++			 * failure actually is. Find the rail that powers them
++			 * (the MT6323 LDO list is the place to look) before
++			 * enabling these - CONFIG_SENSORS_TMP103 is already =y
++			 * and the driver matches "ti,tmp103" correctly.
++			 */
++			tmp103_0: tmp103@70 {
++				compatible = "ti,tmp103";
++				reg = <0x70>;
++				status = "disabled";
++			};
++
++			tmp103_1: tmp103@71 {
++				compatible = "ti,tmp103";
++				reg = <0x71>;
++				status = "disabled";
++			};
++
++			tmp103_2: tmp103@72 {
++				compatible = "ti,tmp103";
++				reg = <0x72>;
++				status = "disabled";
++			};
++
++			charger: bq24296@6b {
++				compatible = "ti,bq24297";
++				reg = <0x6b>;
++				pinctrl-names = "default";
++				pinctrl-0 = <&bq24297_pins>;
++				interrupt-parent = <&pio>;
++				interrupts = <1 IRQ_TYPE_EDGE_FALLING>;
++				ti,system-minimum-microvolt = <3500000>;
++				disable-reset;
++				/*
++				 * Do not register bq24190's own (deprecated)
++				 * "bq24190-battery" power supply. The real gauge
++				 * is the MT6323 AUXADC one in douglas-battery.c,
++				 * which used to call power_supply_unregister() on
++				 * bq24190's battery psy to take over the name -
++				 * freeing it behind the owning driver, which still
++				 * held the pointer in bdi->battery. That left
++				 * bq24190_pm_resume()'s
++				 * "if (bdi->battery) power_supply_changed(...)" a
++				 * use-after-free, which oopsed on every resume.
++				 * With this property bdi->battery stays NULL.
++				 */
++				omit-battery-class;
++			};
++		};
++
++		consys: consys@18070000 {
++			compatible = "mediatek,mt8163-consys";
++			reg = <0x0 0x18070000 0x0 0x0200>,
++			      <0x0 0x10007000 0x0 0x0100>,
++			      <0x0 0x10001000 0x0 0x1000>,
++			      <0x0 0x10006000 0x0 0x1000>;
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_CONN>;
++			clocks = <&infracfg CLK_INFRA_PMIC_CONN>;
++			clock-names = "bus";
++			interrupts = <GIC_SPI 237 IRQ_TYPE_LEVEL_LOW>,
++				     <GIC_SPI 236 IRQ_TYPE_LEVEL_LOW>;
++			pinctrl-names = "default",
++					"gps_lna_state_init",
++					"gps_lna_state_oh",
++					"gps_lna_state_ol",
++					"wifi_reset_init";
++			pinctrl-0 = <&consys_pins_default>;
++			pinctrl-1 = <&gpslna_pins_init>;
++			pinctrl-2 = <&gpslna_pins_oh>;
++			pinctrl-3 = <&gpslna_pins_ol>;
++			pinctrl-4 = <&wifi_reset_init>;
++			vcn18-supply = <&mt6323_vcn18_reg>;
++			vcn28-supply = <&mt6323_vcn28_reg>;
++			vcn33_bt-supply = <&mt6323_vcn33_bt_reg>;
++			vcn33_wifi-supply = <&mt6323_vcn33_wifi_reg>;
++			status = "okay";
++		};
++
++		wifi: wifi@180f0000 {
++			compatible = "mediatek,wifi";
++			reg = <0x0 0x180f0000 0x0 0x005c>;
++			interrupts = <GIC_SPI 238 IRQ_TYPE_LEVEL_LOW>;
++			clocks = <&infracfg CLK_INFRA_AP_DMA>;
++			clock-names = "wifi-dma";
++		};
++
++		audiosys: audiosys@11220000 {
++			compatible = "mediatek,mt8163-audiosys", "syscon";
++			reg = <0x0 0x11220000 0x0 0x1000>;
++			#clock-cells = <1>;
++		};
++
++		afe: mt_soc_dl1_pcm@11220000 {
++			compatible = "mediatek,mt8163-soc-pcm-dl1";
++			reg = <0x0 0x11220000 0x0 0x1000>,
++			      <0x0 0x11221000 0x0 0x9000>;
++			interrupts = <GIC_SPI 142 IRQ_TYPE_LEVEL_LOW>;
++			clocks = <&infracfg CLK_INFRA_AUDIO>,
++				 <&topckgen CLK_TOP_AUDIO_SEL>,
++				 <&topckgen CLK_TOP_AUD_INTBUS_SEL>,
++				 <&topckgen CLK_TOP_AUD_2_SEL>,
++				 <&topckgen CLK_TOP_APLL2>,
++				 <&audiosys CLK_AUDIO_24M>;
++			clock-names = "aud_infra_clk",
++				      "top_mux_audio",
++				      "top_mux_audio_intbus",
++				      "aud_mux2_clk",
++				      "apmixed_apll2_clk",
++				      "aud_24m_clk";
++			power-domains = <&scpsys MT8163_POWER_DOMAIN_AUDIO>;
++			mediatek,pmic = <&pmic>;
++			pinctrl-names = "default",
++					"audpmicclk-speaker-mode0",
++					"audpmicclk-speaker-mode1",
++					"audi2s1-speaker-mode0",
++					"audi2s1-speaker-mode1",
++					"extamp-pullhigh",
++					"extamp-pulllow",
++					"cmmclk-mclk";
++			pinctrl-0 = <&aud_pins_default>;
++			pinctrl-1 = <&aud_pins_pmic_mode0>;
++			pinctrl-2 = <&aud_pins_pmic_mode1>;
++			pinctrl-3 = <&aud_pins_default>;
++			pinctrl-4 = <&aud_pins_default>;
++			pinctrl-5 = <&aud_pins_extamp_high>;
++			pinctrl-6 = <&aud_pins_extamp_low>;
++			pinctrl-7 = <&aud_pins_default>;
++			status = "okay";
++		};
++
++		sound {
++			compatible = "amazon,mt8163-douglas-audio";
++			mediatek,afe = <&afe>;
++			mediatek,pmic = <&pmic>;
++			status = "okay";
++		};
++	};
++};
+diff --git a/arch/arm64/kernel/Makefile b/arch/arm64/kernel/Makefile
+index 2f361a883..689fe58d8 100644
+--- a/arch/arm64/kernel/Makefile
++++ b/arch/arm64/kernel/Makefile
+@@ -87,6 +87,11 @@ $(obj)/vdso32-wrap.o: $(obj)/vdso32/vdso.so
+ 
+ obj-y					+= probes/
+ obj-y					+= head.o
++obj-y					+= dtb_builtin.o
++
++# built-in douglas DTB (built before this object; path passed via -D)
++$(obj)/dtb_builtin.o: $(objtree)/arch/arm64/boot/dts/mediatek/mt8163-douglas.dtb
++AFLAGS_dtb_builtin.o			+= -DDTB_PATH=\"$(objtree)/arch/arm64/boot/dts/mediatek/mt8163-douglas.dtb\"
+ extra-y					+= vmlinux.lds
+ 
+ ifeq ($(CONFIG_DEBUG_EFI),y)
+diff --git a/arch/arm64/kernel/dtb_builtin.S b/arch/arm64/kernel/dtb_builtin.S
+new file mode 100644
+index 000000000..3054b0b2b
+--- /dev/null
++++ b/arch/arm64/kernel/dtb_builtin.S
+@@ -0,0 +1,14 @@
++/*
++ * Built-in device tree blob for the Amazon Fire HD 8 (douglas).
++ * The LK bootloader always passes its own 3.18-era DTB which is unusable
++ * by mainline; setup_arch() unconditionally points __fdt_pointer at this
++ * blob instead (see arch/arm64/kernel/setup.c).
++ */
++	.section .rodata
++	.balign 4096
++	.global dtb_builtin_begin
++dtb_builtin_begin:
++	.incbin DTB_PATH
++	.global dtb_builtin_end
++dtb_builtin_end:
++	.balign 8
+diff --git a/arch/arm64/kernel/head.S b/arch/arm64/kernel/head.S
+index cdbbc95eb..0ef5089f5 100644
+--- a/arch/arm64/kernel/head.S
++++ b/arch/arm64/kernel/head.S
+@@ -86,6 +86,12 @@
+ 	 *  x28        create_idmap()                           callee preserved temp register
+ 	 */
+ SYM_CODE_START(primary_entry)
++	/* douglas: raw physical marker '0' at 0x9850000c before MMU is on */
++	movz	x9, #0x000c
++	movk	x9, #0x9850, lsl #16
++	mov	w10, #0x30
++	strb	w10, [x9]
++	dsb	sy
+ 	bl	preserve_boot_args
+ 	bl	init_kernel_el			// w0=cpu_boot_mode
+ 	mov	x20, x0
+@@ -106,6 +112,12 @@ SYM_CODE_START(primary_entry)
+ 	mov	x0, x25
+ #endif
+ 	bl	__cpu_setup			// initialise processor
++	/* douglas: raw physical marker '1' at 0x9850000d before __primary_switch */
++	movz	x9, #0x000d
++	movk	x9, #0x9850, lsl #16
++	mov	w10, #0x31
++	strb	w10, [x9]
++	dsb	sy
+ 	b	__primary_switch
+ SYM_CODE_END(primary_entry)
+ 
+diff --git a/arch/arm64/kernel/psci.c b/arch/arm64/kernel/psci.c
+index 29a8e444d..f55c4685f 100644
+--- a/arch/arm64/kernel/psci.c
++++ b/arch/arm64/kernel/psci.c
+@@ -9,6 +9,7 @@
+ #define pr_fmt(fmt) "psci: " fmt
+ 
+ #include <linux/init.h>
++#include <linux/io.h>
+ #include <linux/of.h>
+ #include <linux/smp.h>
+ #include <linux/delay.h>
+@@ -36,6 +37,69 @@ static int __init cpu_psci_cpu_prepare(unsigned int cpu)
+ 	return 0;
+ }
+ 
++static void mt8163_spm_cpu_power_on(unsigned int cpu)
++{
++	static void __iomem *spm;
++	static const u32 pwr_con_offs[4] = { 0x0200, 0x0218, 0x021c, 0x0220 };
++	static const u32 l1_pdn_offs[4]  = { 0x025c, 0x0264, 0x026c, 0x0274 };
++	static const u32 sta_bits[4]     = { BIT(9), BIT(10), BIT(11), BIT(12) };
++	u32 pwr_con, l1_pdn, sta;
++	int to;
++
++	if (cpu == 0 || cpu >= 4)
++		return;
++
++	if (!spm) {
++		spm = ioremap(0x10006000, 0x1000);
++		if (!spm) {
++			pr_err("mt8163-smp: failed to ioremap SPM\n");
++			return;
++		}
++	}
++
++	pwr_con = pwr_con_offs[cpu];
++	l1_pdn = l1_pdn_offs[cpu];
++	sta = sta_bits[cpu];
++
++	/* Enable SPM register control */
++	writel((0x0b16U << 16) | BIT(0), spm + 0x0000);
++
++	writel(readl(spm + pwr_con) | BIT(2), spm + pwr_con);	/* PWR_ON */
++	udelay(1);
++	writel(readl(spm + pwr_con) | BIT(3), spm + pwr_con);	/* PWR_ON_2ND */
++
++	for (to = 10000; to > 0; to--) {
++		if ((readl(spm + 0x060c) & sta) && (readl(spm + 0x0610) & sta))
++			break;
++		udelay(1);
++	}
++	if (!to) {
++		pr_err("mt8163-smp: CPU%u PWR_STATUS timeout\n", cpu);
++		return;
++	}
++
++	writel(readl(spm + pwr_con) & ~BIT(1), spm + pwr_con);	/* ~PWR_ISO */
++	writel(readl(spm + l1_pdn) & ~BIT(0), spm + l1_pdn);	/* ~L1_PDN */
++
++	for (to = 10000; to > 0; to--) {
++		if ((readl(spm + l1_pdn) & BIT(8)) == 0)	/* L1_PDN_ACK */
++			break;
++		udelay(1);
++	}
++	if (!to) {
++		pr_err("mt8163-smp: CPU%u L1_PDN_ACK timeout\n", cpu);
++		return;
++	}
++
++	udelay(1);
++	writel(readl(spm + pwr_con) | BIT(6), spm + pwr_con);	/* SRAM_ISOINT_B */
++	writel(readl(spm + pwr_con) & ~BIT(5), spm + pwr_con);	/* ~SRAM_CKISO */
++	writel(readl(spm + pwr_con) & ~BIT(4), spm + pwr_con);	/* ~PWR_CLK_DIS */
++	writel(readl(spm + pwr_con) | BIT(0), spm + pwr_con);	/* PWR_RST_B */
++
++	pr_info("mt8163-smp: powered on CPU%u via SPM\n", cpu);
++}
++
+ static int cpu_psci_cpu_boot(unsigned int cpu)
+ {
+ 	phys_addr_t pa_secondary_entry = __pa_symbol(secondary_entry);
+@@ -43,6 +107,9 @@ static int cpu_psci_cpu_boot(unsigned int cpu)
+ 	if (err)
+ 		pr_err("failed to boot CPU%d (%d)\n", cpu, err);
+ 
++	if (!err && of_machine_is_compatible("amazon,douglas"))
++		mt8163_spm_cpu_power_on(cpu);
++
+ 	return err;
+ }
+ 
+diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
+index 44c4d79bd..a690aef3c 100644
+--- a/arch/arm64/kernel/setup.c
++++ b/arch/arm64/kernel/setup.c
+@@ -178,16 +178,33 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
+ 	early_fdt_ptr = fixmap_remap_fdt(dt_phys, &fdt_size, PAGE_KERNEL);
+ }
+ 
++extern char dtb_builtin_begin[];
++extern char dtb_builtin_end[];
++extern void kmark(u8 c);
++extern void kmark_u64(int slot, u64 val);
++
+ static void __init setup_machine_fdt(phys_addr_t dt_phys)
+ {
+-	int size;
+-	void *dt_virt = fixmap_remap_fdt(dt_phys, &size, PAGE_KERNEL);
++	int size = 0;
++	void *dt_virt;
+ 	const char *name;
+ 
++	kmark('1');
++	kmark_u64(0, dt_phys);
++	kmark_u64(1, kimage_voffset);
++	/* Use the built-in DTB directly from .rodata (permanently mapped). */
++	dt_virt = (void *)dtb_builtin_begin;
++	size = (int)(dtb_builtin_end - dtb_builtin_begin);
++	kmark('2');
++	kmark_u64(4, (u64)dt_virt);
++	kmark_u64(5, (u64)size);
++
+ 	if (dt_virt)
+ 		memblock_reserve(dt_phys, size);
++	kmark('3');
+ 
+ 	if (!dt_virt || !early_init_dt_scan(dt_virt)) {
++		kmark('X');
+ 		pr_crit("\n"
+ 			"Error: invalid device tree blob at physical address %pa (virtual address 0x%px)\n"
+ 			"The dtb must be 8-byte aligned and must not exceed 2 MB in size\n"
+@@ -202,9 +219,7 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
+ 		while (true)
+ 			cpu_relax();
+ 	}
+-
+-	/* Early fixups are done, map the FDT as read-only now */
+-	fixmap_remap_fdt(dt_phys, &size, PAGE_KERNEL_RO);
++	kmark('4');
+ 
+ 	name = of_flat_dt_get_machine_name();
+ 	if (!name)
+@@ -287,6 +302,77 @@ u64 cpu_logical_map(unsigned int cpu)
+ 	return __cpu_logical_map[cpu];
+ }
+ 
++extern char dtb_builtin_begin[];
++
++/*
++ * Uncached DRAM stage markers at 0x98500000 (the 2MB hole, outside all
++ * memory blocks - survives every warm reset; readable from TWRP via
++ * /dev/physmem). We pin one fixmap slot (the otherwise-unused earlycon
++ * slot) to the page for the whole life of the kernel: one PTE write,
++ * valid from early_fixmap_init() until forever, no lifecycle headaches
++ * with early_ioremap slots. Device-nGnRE attributes mean writes reach
++ * DRAM even if the CPU hangs and the LK-armed watchdog hard-resets us.
++ */
++#define KMARK_PHYS_BASE		0x98500000UL
++#define KMARK_MAGIC		0x4B4D524B	/* "KMRK" */
++
++static u8 *kmark_va;
++static u8 kmark_idx = 0x10;
++static u32 kmark_log_pos;
++
++#define KMARK_LOG_OFF		0x300
++#define KMARK_LOG_SIZE		(0x1000 - KMARK_LOG_OFF)
++
++static void __init kmark_init(void)
++{
++	u32 *p;
++
++	__set_fixmap(FIX_EARLYCON_MEM_BASE, KMARK_PHYS_BASE, pgprot_device(PAGE_KERNEL));
++	kmark_va = (u8 *)__fix_to_virt(FIX_EARLYCON_MEM_BASE);
++
++	p = (u32 *)kmark_va;
++	if (p[0] == KMARK_MAGIC)
++		p[1]++;			/* boots since first flash */
++	else {
++		p[0] = KMARK_MAGIC;
++		p[1] = 1;
++	}
++	p[2] = 0;			/* reserved */
++	dsb(sy);
++}
++
++void kmark(u8 c)			/* called from init/main.c too - must not be __init */
++{
++	if (!kmark_va)
++		return;
++	writeb(c, kmark_va + kmark_idx++);
++	dsb(sy);
++}
++
++void kmark_u64(int slot, u64 val)
++{
++	if (!kmark_va || slot < 0 || slot >= 16)
++		return;
++	writeq(val, kmark_va + 0x40 + slot * 8);
++	dsb(sy);
++}
++
++void kmark_log(const char *s, size_t len)
++{
++	size_t i;
++
++	if (!kmark_va)
++		return;
++	for (i = 0; i < len; i++) {
++		writeb((u8)s[i], kmark_va + KMARK_LOG_OFF + (kmark_log_pos % KMARK_LOG_SIZE));
++		kmark_log_pos++;
++	}
++	writeb('\n', kmark_va + KMARK_LOG_OFF + (kmark_log_pos % KMARK_LOG_SIZE));
++	kmark_log_pos++;
++	writel(kmark_log_pos, kmark_va + 0x2f8);
++	dsb(sy);
++}
++
+ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+ {
+ 	setup_initial_init_mm(_stext, _etext, _edata, _end);
+@@ -301,9 +387,31 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+ 	arm64_use_ng_mappings = kaslr_requires_kpti();
+ 
+ 	early_fixmap_init();
++
++	kmark_init();
++	kmark('A');			/* fixmap up */
++
+ 	early_ioremap_init();
+ 
++	/*
++	 * The LK always passes its own 3.18-era vendor DTB, which no mainline
++	 * driver can bind. Unconditionally use our built-in douglas DTB
++	 * instead (linked into .rodata - see arch/arm64/kernel/dtb_builtin.S).
++	 */
++	__fdt_pointer = __pa_symbol(dtb_builtin_begin);
++	kmark_u64(2, (u64)dtb_builtin_begin);
++	kmark_u64(3, (u64)(*(u32 *)dtb_builtin_begin));
++
+ 	setup_machine_fdt(__fdt_pointer);
++	kmark('B');			/* DTB scanned, memory/chosen known */
++
++	/*
++	 * NOTE: do NOT touch the MTK RGU watchdog here. Early experiments
++	 * (stage-marker stub stub3) showed that writes to 0x10007000 from
++	 * non-secure EL1 abort in this context, killing the kernel silently.
++	 * The LK arms the WDT with a ~60s timeout; if we hang, it resets us
++	 * and the DRAM trace/log at 0x98400000 survives for post-mortem.
++	 */
+ 
+ 	/*
+ 	 * Initialise the static keys early as they may be enabled by the
+@@ -311,6 +419,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+ 	 */
+ 	jump_label_init();
+ 	parse_early_param();
++	kmark('C');			/* early params parsed */
+ 
+ 	/*
+ 	 * Unmask asynchronous aborts and fiq after bringing up possible
+@@ -332,8 +441,10 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+ 	     pr_warn(FW_BUG "Kernel image misaligned at boot, please fix your bootloader!");
+ 
+ 	arm64_memblock_init();
++	kmark('D');			/* memblock ready */
+ 
+ 	paging_init();
++	kmark('E');			/* MMU/paging up */
+ 
+ 	acpi_table_upgrade();
+ 
+diff --git a/drivers/clk/mediatek/Kconfig b/drivers/clk/mediatek/Kconfig
+index 8eb0b7b2a..1efe4ec33 100644
+--- a/drivers/clk/mediatek/Kconfig
++++ b/drivers/clk/mediatek/Kconfig
+@@ -408,7 +408,7 @@ config COMMON_CLK_MT8135
+ 
+ config COMMON_CLK_MT8163
+ 	bool "Clock driver for MediaTek MT8163"
+-	depends on (ARCH_MEDIATEK && ARM) || COMPILE_TEST
++	depends on (ARCH_MEDIATEK && (ARM || ARM64)) || COMPILE_TEST
+ 	select COMMON_CLK_MEDIATEK
+ 	default MACH_MT8163
+ 	help
+diff --git a/drivers/clk/mediatek/clk-mt8163.c b/drivers/clk/mediatek/clk-mt8163.c
+index c2ca7a177..74ac2b7b2 100644
+--- a/drivers/clk/mediatek/clk-mt8163.c
++++ b/drivers/clk/mediatek/clk-mt8163.c
+@@ -1182,7 +1182,7 @@ static void __init mtk_mmsys_init(struct device_node *node)
+ 		pr_err("%s(): could not register clock provider: %d\n",
+ 			__func__, r);
+ }
+-CLK_OF_DECLARE(mtk_mmsys, "mediatek,mt8163-mmsys", mtk_mmsys_init);
++CLK_OF_DECLARE_DRIVER(mtk_mmsys, "mediatek,mt8163-mmsys", mtk_mmsys_init);
+ 
+ static void __init mtk_vdecsys_init(struct device_node *node)
+ {
+diff --git a/drivers/gpu/drm/mediatek/mtk_disp_ovl.c b/drivers/gpu/drm/mediatek/mtk_disp_ovl.c
+index 002b0f6ca..4d1d803f3 100644
+--- a/drivers/gpu/drm/mediatek/mtk_disp_ovl.c
++++ b/drivers/gpu/drm/mediatek/mtk_disp_ovl.c
+@@ -265,6 +265,8 @@ void mtk_ovl_layer_off(struct device *dev, unsigned int idx,
+ 			   DISP_REG_OVL_SRC_CON, BIT(idx));
+ 	mtk_ddp_write(cmdq_pkt, 0, &ovl->cmdq_reg, ovl->regs,
+ 		      DISP_REG_OVL_RDMA_CTRL(idx));
++	mtk_ddp_write(cmdq_pkt, 0x1, &ovl->cmdq_reg, ovl->regs, DISP_REG_OVL_RST);
++	mtk_ddp_write(cmdq_pkt, 0x0, &ovl->cmdq_reg, ovl->regs, DISP_REG_OVL_RST);
+ }
+ 
+ static unsigned int ovl_fmt_convert(struct mtk_disp_ovl *ovl, unsigned int fmt)
+@@ -347,6 +349,8 @@ void mtk_ovl_layer_config(struct device *dev, unsigned int idx,
+ 			      DISP_REG_OVL_ADDR(ovl, idx));
+ 
+ 	mtk_ovl_layer_on(dev, idx, cmdq_pkt);
++	mtk_ddp_write(cmdq_pkt, 0x1, &ovl->cmdq_reg, ovl->regs, DISP_REG_OVL_RST);
++	mtk_ddp_write(cmdq_pkt, 0x0, &ovl->cmdq_reg, ovl->regs, DISP_REG_OVL_RST);
+ }
+ 
+ void mtk_ovl_bgclr_in_on(struct device *dev)
+@@ -422,6 +426,10 @@ static int mtk_disp_ovl_probe(struct platform_device *pdev)
+ 	priv->data = of_device_get_match_data(dev);
+ 	platform_set_drvdata(pdev, priv);
+ 
++	/* Disable and clear pending interrupts */
++	writel(0x0, priv->regs + DISP_REG_OVL_INTEN);
++	writel(0x0, priv->regs + DISP_REG_OVL_INTSTA);
++
+ 	ret = devm_request_irq(dev, irq, mtk_disp_ovl_irq_handler,
+ 			       IRQF_TRIGGER_NONE, dev_name(dev), priv);
+ 	if (ret < 0) {
+diff --git a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
+index aba26ec9a..6c4fe4ac8 100644
+--- a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
++++ b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
+@@ -394,25 +394,12 @@ static int mtk_crtc_ddp_hw_init(struct mtk_drm_crtc *mtk_crtc)
+ 		goto err_mutex_unprepare;
+ 	}
+ 
+-	for (i = 0; i < mtk_crtc->ddp_comp_nr - 1; i++) {
+-		mtk_mmsys_ddp_connect(mtk_crtc->mmsys_dev,
+-				      mtk_crtc->ddp_comp[i]->id,
+-				      mtk_crtc->ddp_comp[i + 1]->id);
+-		mtk_mutex_add_comp(mtk_crtc->mutex,
+-					mtk_crtc->ddp_comp[i]->id);
+-	}
+-	mtk_mutex_add_comp(mtk_crtc->mutex, mtk_crtc->ddp_comp[i]->id);
+-	mtk_mutex_enable(mtk_crtc->mutex);
+-
+-	for (i = 0; i < mtk_crtc->ddp_comp_nr; i++) {
+-		struct mtk_ddp_comp *comp = mtk_crtc->ddp_comp[i];
+-
+-		if (i == 1)
+-			mtk_ddp_comp_bgclr_in_on(comp);
+-
+-		mtk_ddp_comp_config(comp, width, height, vrefresh, bpc, NULL);
+-		mtk_ddp_comp_start(comp);
+-	}
++	/*
++	 * Preserve LK's active 60Hz MMSYS/MUTEX/COLOR0..DSI0 scanout pipeline
++	 * on MT8163 Douglas; only configure OVL0 planes.
++	 */
++	mtk_ddp_comp_config(mtk_crtc->ddp_comp[0], width, height, vrefresh, bpc, NULL);
++	mtk_ddp_comp_start(mtk_crtc->ddp_comp[0]);
+ 
+ 	/* Initially configure all planes */
+ 	for (i = 0; i < mtk_crtc->layer_nr; i++) {
+@@ -445,26 +432,7 @@ static void mtk_crtc_ddp_hw_fini(struct mtk_drm_crtc *mtk_crtc)
+ 	struct drm_device *drm = mtk_crtc->base.dev;
+ 	struct drm_crtc *crtc = &mtk_crtc->base;
+ 	unsigned long flags;
+-	int i;
+ 
+-	for (i = 0; i < mtk_crtc->ddp_comp_nr; i++) {
+-		mtk_ddp_comp_stop(mtk_crtc->ddp_comp[i]);
+-		if (i == 1)
+-			mtk_ddp_comp_bgclr_in_off(mtk_crtc->ddp_comp[i]);
+-	}
+-
+-	for (i = 0; i < mtk_crtc->ddp_comp_nr; i++)
+-		mtk_mutex_remove_comp(mtk_crtc->mutex,
+-					   mtk_crtc->ddp_comp[i]->id);
+-	mtk_mutex_disable(mtk_crtc->mutex);
+-	for (i = 0; i < mtk_crtc->ddp_comp_nr - 1; i++) {
+-		mtk_mmsys_ddp_disconnect(mtk_crtc->mmsys_dev,
+-					 mtk_crtc->ddp_comp[i]->id,
+-					 mtk_crtc->ddp_comp[i + 1]->id);
+-		mtk_mutex_remove_comp(mtk_crtc->mutex,
+-					   mtk_crtc->ddp_comp[i]->id);
+-	}
+-	mtk_mutex_remove_comp(mtk_crtc->mutex, mtk_crtc->ddp_comp[i]->id);
+ 	mtk_crtc_ddp_clk_disable(mtk_crtc);
+ 	mtk_mutex_unprepare(mtk_crtc->mutex);
+ 
+diff --git a/drivers/gpu/drm/mediatek/mtk_drm_drv.c b/drivers/gpu/drm/mediatek/mtk_drm_drv.c
+index 905275df0..7b5b3d34b 100644
+--- a/drivers/gpu/drm/mediatek/mtk_drm_drv.c
++++ b/drivers/gpu/drm/mediatek/mtk_drm_drv.c
+@@ -353,7 +353,8 @@ static int mtk_drm_kms_init(struct drm_device *drm)
+ 	if (drm_firmware_drivers_only())
+ 		return -ENODEV;
+ 
+-	if (!iommu_present(&platform_bus_type))
++	if (!iommu_present(&platform_bus_type) &&
++	    !of_machine_is_compatible("amazon,douglas"))
+ 		return -EPROBE_DEFER;
+ 
+ 	pdev = of_find_device_by_node(private->mutex_node);
+@@ -574,6 +575,8 @@ static const struct of_device_id mtk_ddp_comp_dt_ids[] = {
+ 	  .data = (void *)MTK_DISP_MUTEX },
+ 	{ .compatible = "mediatek,mt2712-disp-mutex",
+ 	  .data = (void *)MTK_DISP_MUTEX },
++	{ .compatible = "mediatek,mt8163-disp-mutex",
++	  .data = (void *)MTK_DISP_MUTEX },
+ 	{ .compatible = "mediatek,mt8167-disp-mutex",
+ 	  .data = (void *)MTK_DISP_MUTEX },
+ 	{ .compatible = "mediatek,mt8173-disp-mutex",
+@@ -656,6 +659,8 @@ static const struct of_device_id mtk_drm_of_ids[] = {
+ 	  .data = &mt7623_mmsys_match_data},
+ 	{ .compatible = "mediatek,mt2712-mmsys",
+ 	  .data = &mt2712_mmsys_match_data},
++	{ .compatible = "mediatek,mt8163-mmsys",
++	  .data = &mt8167_mmsys_match_data},
+ 	{ .compatible = "mediatek,mt8167-mmsys",
+ 	  .data = &mt8167_mmsys_match_data},
+ 	{ .compatible = "mediatek,mt8173-mmsys",
+diff --git a/drivers/gpu/drm/mediatek/mtk_dsi.c b/drivers/gpu/drm/mediatek/mtk_dsi.c
+index 0acfda47f..f238de71b 100644
+--- a/drivers/gpu/drm/mediatek/mtk_dsi.c
++++ b/drivers/gpu/drm/mediatek/mtk_dsi.c
+@@ -10,6 +10,7 @@
+ #include <linux/of.h>
+ #include <linux/of_platform.h>
+ #include <linux/phy/phy.h>
++#include <linux/pm_runtime.h>
+ #include <linux/platform_device.h>
+ #include <linux/reset.h>
+ 
+@@ -581,10 +582,11 @@ static irqreturn_t mtk_dsi_irq(int irq, void *dev_id)
+ 	status = readl(dsi->regs + DSI_INTSTA) & flag;
+ 
+ 	if (status) {
++		int retry = 1000;
+ 		do {
+ 			mtk_dsi_mask(dsi, DSI_RACK, RACK, RACK);
+ 			tmp = readl(dsi->regs + DSI_INTSTA);
+-		} while (tmp & DSI_BUSY);
++		} while ((tmp & DSI_BUSY) && --retry);
+ 
+ 		mtk_dsi_mask(dsi, DSI_INTSTA, status, 0);
+ 		mtk_dsi_irq_data_set(dsi, status);
+@@ -633,39 +635,54 @@ static int mtk_dsi_poweron(struct mtk_dsi *dsi)
+ 	dsi->data_rate = DIV_ROUND_UP_ULL(dsi->vm.pixelclock * bit_per_pixel,
+ 					  dsi->lanes);
+ 
+-	ret = clk_set_rate(dsi->hs_clk, dsi->data_rate);
+-	if (ret < 0) {
+-		dev_err(dev, "Failed to set data rate: %d\n", ret);
++	/* Keep LK's active 60Hz MIPI_TX0 + DSI0 video mode running on Douglas */
++	ret = clk_prepare_enable(dsi->engine_clk);
++	if (ret < 0)
+ 		goto err_refcount;
+-	}
++	ret = clk_prepare_enable(dsi->digital_clk);
++	if (ret < 0)
++		goto err_disable_engine_clk;
++	return 0;
+ 
+-	phy_power_on(dsi->phy);
++	pr_info("MTKDRM_TRACE: dsi_poweron rate=%u (keeping LK MIPI_TX0 PLL)\n", dsi->data_rate);
++	msleep(50);
+ 
++	pr_info("MTKDRM_TRACE: dsi_poweron engine_clk\n");
++	msleep(50);
+ 	ret = clk_prepare_enable(dsi->engine_clk);
+ 	if (ret < 0) {
+ 		dev_err(dev, "Failed to enable engine clock: %d\n", ret);
+ 		goto err_phy_power_off;
+ 	}
+ 
++	pr_info("MTKDRM_TRACE: dsi_poweron digital_clk\n");
++	msleep(50);
+ 	ret = clk_prepare_enable(dsi->digital_clk);
+ 	if (ret < 0) {
+ 		dev_err(dev, "Failed to enable digital clock: %d\n", ret);
+ 		goto err_disable_engine_clk;
+ 	}
+ 
++	pr_info("MTKDRM_TRACE: dsi_poweron mtk_dsi_enable regs=%px\n", dsi->regs);
++	msleep(50);
+ 	mtk_dsi_enable(dsi);
+ 
+ 	if (dsi->driver_data->has_shadow_ctl)
+ 		writel(FORCE_COMMIT | BYPASS_SHADOW,
+ 		       dsi->regs + DSI_SHADOW_DEBUG);
+ 
++	pr_info("MTKDRM_TRACE: dsi_poweron reset_engine\n");
++	msleep(50);
+ 	mtk_dsi_reset_engine(dsi);
+ 	mtk_dsi_phy_timconfig(dsi);
+ 
+ 	mtk_dsi_ps_control_vact(dsi);
+ 	mtk_dsi_set_vm_cmd(dsi);
+ 	mtk_dsi_config_vdo_timing(dsi);
++	pr_info("MTKDRM_TRACE: dsi_poweron set_irq_en\n");
++	msleep(50);
+ 	mtk_dsi_set_interrupt_enable(dsi);
++	pr_info("MTKDRM_TRACE: dsi_poweron DONE\n");
+ 
+ 	return 0;
+ err_disable_engine_clk:
+@@ -685,6 +702,10 @@ static void mtk_dsi_poweroff(struct mtk_dsi *dsi)
+ 	if (--dsi->refcount != 0)
+ 		return;
+ 
++	clk_disable_unprepare(dsi->engine_clk);
++	clk_disable_unprepare(dsi->digital_clk);
++	return;
++
+ 	/*
+ 	 * mtk_dsi_stop() and mtk_dsi_start() is asymmetric, since
+ 	 * mtk_dsi_stop() should be called after mtk_drm_crtc_atomic_disable(),
+@@ -731,12 +752,6 @@ static void mtk_output_dsi_enable(struct mtk_dsi *dsi)
+ 	if (dsi->enabled)
+ 		return;
+ 
+-	mtk_dsi_lane_ready(dsi);
+-	mtk_dsi_set_mode(dsi);
+-	mtk_dsi_clk_hs_mode(dsi, 1);
+-
+-	mtk_dsi_start(dsi);
+-
+ 	dsi->enabled = true;
+ }
+ 
+@@ -1013,6 +1028,13 @@ static ssize_t mtk_dsi_host_send_cmd(struct mtk_dsi *dsi,
+ 
+ static ssize_t mtk_dsi_host_transfer(struct mipi_dsi_host *host,
+ 				     const struct mipi_dsi_msg *msg)
++{
++	/* Panel is already initialized and scanning out in 60Hz video mode from LK */
++	return 0;
++}
++
++static ssize_t __unused_mtk_dsi_host_transfer(struct mipi_dsi_host *host,
++				     const struct mipi_dsi_msg *msg)
+ {
+ 	struct mtk_dsi *dsi = host_to_dsi(host);
+ 	ssize_t recv_cnt;
+@@ -1023,12 +1045,12 @@ static ssize_t mtk_dsi_host_transfer(struct mipi_dsi_host *host,
+ 	int ret, i;
+ 
+ 	dsi_mode = readl(dsi->regs + DSI_MODE_CTRL);
+-	if (dsi_mode & MODE) {
+-		mtk_dsi_stop(dsi);
+-		ret = mtk_dsi_switch_to_cmd_mode(dsi, VM_DONE_INT_FLAG, 500);
+-		if (ret)
+-			goto restore_dsi_mode;
+-	}
++	/*
++	 * douglas: do not stop/switch the DSI. VM_DONE never arrives here
++	 * (video engine not started yet at panel-init time), so the switch
++	 * always times out. The controller supports command insertion during
++	 * video mode via VM_CMD (enabled in mtk_dsi_poweron); send directly.
++	 */
+ 
+ 	if (MTK_DSI_HOST_IS_READ(msg->type))
+ 		irq_flag |= LPRX_RD_RDY_INT_FLAG;
+@@ -1101,11 +1123,7 @@ static int mtk_dsi_probe(struct platform_device *pdev)
+ 
+ 	dsi->host.ops = &mtk_dsi_ops;
+ 	dsi->host.dev = dev;
+-	ret = mipi_dsi_host_register(&dsi->host);
+-	if (ret < 0) {
+-		dev_err(dev, "failed to register DSI host: %d\n", ret);
+-		return ret;
+-	}
++	platform_set_drvdata(pdev, dsi);
+ 
+ 	dsi->driver_data = of_device_get_match_data(dev);
+ 
+@@ -1164,16 +1182,22 @@ static int mtk_dsi_probe(struct platform_device *pdev)
+ 
+ 	init_waitqueue_head(&dsi->irq_wait_queue);
+ 
+-	platform_set_drvdata(pdev, dsi);
+-
+ 	dsi->bridge.funcs = &mtk_dsi_bridge_funcs;
+ 	dsi->bridge.of_node = dev->of_node;
+ 	dsi->bridge.type = DRM_MODE_CONNECTOR_DSI;
+ 
++	pm_runtime_enable(dev);
++	pm_runtime_get_sync(dev);
++
++	ret = mipi_dsi_host_register(&dsi->host);
++	if (ret < 0) {
++		dev_err(dev, "failed to register DSI host: %d\n", ret);
++		return ret;
++	}
++
+ 	return 0;
+ 
+ err_unregister_host:
+-	mipi_dsi_host_unregister(&dsi->host);
+ 	return ret;
+ }
+ 
+diff --git a/drivers/gpu/drm/panel/Kconfig b/drivers/gpu/drm/panel/Kconfig
+index a582ddd58..4e3f7e045 100644
+--- a/drivers/gpu/drm/panel/Kconfig
++++ b/drivers/gpu/drm/panel/Kconfig
+@@ -717,4 +717,13 @@ config DRM_PANEL_XINPENG_XPP055C272
+ 	  Say Y here if you want to enable support for the Xinpeng
+ 	  XPP055C272 controller for 720x1280 LCD panels with MIPI/RGB/SPI
+ 	  system interfaces.
++config DRM_PANEL_AMAZON_DOUGLAS_NT35521
++	tristate "Amazon Fire HD 8 (douglas) NT35521 DSI panel"
++	depends on OF
++	depends on DRM_MIPI_DSI
++	depends on BACKLIGHT_CLASS_DEVICE
++	help
++	  Say Y here if you want to enable support for the 800x1280 NT35521
++	  DSI panel used in the Amazon Fire HD 8 (2017, douglas).
++
+ endmenu
+diff --git a/drivers/gpu/drm/panel/Makefile b/drivers/gpu/drm/panel/Makefile
+index 34e717382..1734f09b2 100644
+--- a/drivers/gpu/drm/panel/Makefile
++++ b/drivers/gpu/drm/panel/Makefile
+@@ -72,4 +72,5 @@ obj-$(CONFIG_DRM_PANEL_TPO_TPG110) += panel-tpo-tpg110.o
+ obj-$(CONFIG_DRM_PANEL_TRULY_NT35597_WQXGA) += panel-truly-nt35597.o
+ obj-$(CONFIG_DRM_PANEL_VISIONOX_RM69299) += panel-visionox-rm69299.o
+ obj-$(CONFIG_DRM_PANEL_WIDECHIPS_WS2401) += panel-widechips-ws2401.o
++obj-$(CONFIG_DRM_PANEL_AMAZON_DOUGLAS_NT35521) += panel-amazon-douglas-nt35521.o
+ obj-$(CONFIG_DRM_PANEL_XINPENG_XPP055C272) += panel-xinpeng-xpp055c272.o
+diff --git a/drivers/gpu/drm/panel/panel-amazon-douglas-nt35521.c b/drivers/gpu/drm/panel/panel-amazon-douglas-nt35521.c
+new file mode 100644
+index 000000000..5b5159910
+--- /dev/null
++++ b/drivers/gpu/drm/panel/panel-amazon-douglas-nt35521.c
+@@ -0,0 +1,235 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * DRM panel driver for Amazon Fire HD 8 (2017, douglas) 800x1280 NT35521 DSI panel.
++ */
++
++#include <linux/delay.h>
++#include <linux/gpio/consumer.h>
++#include <linux/module.h>
++#include <linux/of.h>
++#include <linux/regulator/consumer.h>
++
++#include <drm/drm_mipi_dsi.h>
++#include <drm/drm_modes.h>
++#include <drm/drm_panel.h>
++
++struct douglas_nt35521 {
++	struct drm_panel panel;
++	struct mipi_dsi_device *dsi;
++	struct regulator *vgp3;
++	struct gpio_desc *pwr_gpio;
++	struct gpio_desc *reset_gpio;
++	bool prepared;
++	bool enabled;
++};
++
++static inline struct douglas_nt35521 *to_douglas_nt35521(struct drm_panel *panel)
++{
++	return container_of(panel, struct douglas_nt35521, panel);
++}
++
++static int douglas_nt35521_prepare(struct drm_panel *panel)
++{
++	struct douglas_nt35521 *ctx = to_douglas_nt35521(panel);
++	struct mipi_dsi_device *dsi = ctx->dsi;
++	int ret;
++
++	if (ctx->prepared)
++		return 0;
++
++	if (ctx->vgp3) {
++		ret = regulator_enable(ctx->vgp3);
++		if (ret < 0)
++			return ret;
++	}
++
++	gpiod_set_value_cansleep(ctx->pwr_gpio, 1);
++	gpiod_set_value_cansleep(ctx->reset_gpio, 0);
++	msleep(20);
++
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++	ret = mipi_dsi_dcs_exit_sleep_mode(dsi);
++	if (ret < 0) {
++		dev_err(&dsi->dev, "Failed to exit sleep mode: %d\n", ret);
++		return ret;
++	}
++	msleep(120);
++
++	ret = mipi_dsi_dcs_set_display_on(dsi);
++	if (ret < 0) {
++		dev_err(&dsi->dev, "Failed to set display on: %d\n", ret);
++		return ret;
++	}
++	msleep(20);
++
++	ctx->prepared = true;
++	return 0;
++}
++
++static int douglas_nt35521_unprepare(struct drm_panel *panel)
++{
++	struct douglas_nt35521 *ctx = to_douglas_nt35521(panel);
++	struct mipi_dsi_device *dsi = ctx->dsi;
++	int ret;
++
++	if (!ctx->prepared)
++		return 0;
++
++	dsi->mode_flags |= MIPI_DSI_MODE_LPM;
++	ret = mipi_dsi_dcs_set_display_off(dsi);
++	if (ret < 0)
++		dev_warn(&dsi->dev, "Failed to set display off: %d\n", ret);
++	msleep(20);
++
++	ret = mipi_dsi_dcs_enter_sleep_mode(dsi);
++	if (ret < 0)
++		dev_warn(&dsi->dev, "Failed to enter sleep mode: %d\n", ret);
++	msleep(120);
++
++	ctx->prepared = false;
++	return 0;
++}
++
++static int douglas_nt35521_enable(struct drm_panel *panel)
++{
++	struct douglas_nt35521 *ctx = to_douglas_nt35521(panel);
++
++	ctx->enabled = true;
++	return 0;
++}
++
++static int douglas_nt35521_disable(struct drm_panel *panel)
++{
++	struct douglas_nt35521 *ctx = to_douglas_nt35521(panel);
++
++	ctx->enabled = false;
++	return 0;
++}
++
++static const struct drm_display_mode douglas_nt35521_mode = {
++	.clock = 69854,
++	.hdisplay = 800,
++	.hsync_start = 800 + 28,
++	.hsync_end = 800 + 28 + 26,
++	.htotal = 800 + 28 + 26 + 28,
++	.vdisplay = 1280,
++	.vsync_start = 1280 + 21,
++	.vsync_end = 1280 + 21 + 4,
++	.vtotal = 1280 + 21 + 4 + 15,
++	.width_mm = 108,
++	.height_mm = 172,
++};
++
++static int douglas_nt35521_get_modes(struct drm_panel *panel,
++				     struct drm_connector *connector)
++{
++	struct drm_display_mode *mode;
++
++	mode = drm_mode_duplicate(connector->dev, &douglas_nt35521_mode);
++	if (!mode)
++		return -ENOMEM;
++
++	drm_mode_set_name(mode);
++	mode->type = DRM_MODE_TYPE_DRIVER | DRM_MODE_TYPE_PREFERRED;
++	connector->display_info.width_mm = mode->width_mm;
++	connector->display_info.height_mm = mode->height_mm;
++	drm_mode_probed_add(connector, mode);
++
++	return 1;
++}
++
++static const struct drm_panel_funcs douglas_nt35521_panel_funcs = {
++	.prepare = douglas_nt35521_prepare,
++	.unprepare = douglas_nt35521_unprepare,
++	.enable = douglas_nt35521_enable,
++	.disable = douglas_nt35521_disable,
++	.get_modes = douglas_nt35521_get_modes,
++};
++
++static int douglas_nt35521_probe(struct mipi_dsi_device *dsi)
++{
++	struct device *dev = &dsi->dev;
++	struct douglas_nt35521 *ctx;
++	int ret;
++
++	ctx = devm_kzalloc(dev, sizeof(*ctx), GFP_KERNEL);
++	if (!ctx)
++		return -ENOMEM;
++
++	ctx->vgp3 = devm_regulator_get_optional(dev, "vgp3");
++	if (IS_ERR(ctx->vgp3)) {
++		if (PTR_ERR(ctx->vgp3) == -ENODEV)
++			ctx->vgp3 = NULL;
++		else
++			return dev_err_probe(dev, PTR_ERR(ctx->vgp3),
++					     "Failed to get vgp3 regulator\n");
++	}
++
++	ctx->pwr_gpio = devm_gpiod_get_optional(dev, "power", GPIOD_OUT_HIGH);
++	if (IS_ERR(ctx->pwr_gpio))
++		return dev_err_probe(dev, PTR_ERR(ctx->pwr_gpio),
++				     "Failed to get power-gpios\n");
++
++	/* Keep reset deasserted so LK's panel initialization is preserved */
++	ctx->reset_gpio = devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_LOW);
++	if (IS_ERR(ctx->reset_gpio))
++		return dev_err_probe(dev, PTR_ERR(ctx->reset_gpio),
++				     "Failed to get reset-gpios\n");
++
++	ctx->dsi = dsi;
++	mipi_dsi_set_drvdata(dsi, ctx);
++
++	dsi->lanes = 4;
++	dsi->format = MIPI_DSI_FMT_RGB888;
++	dsi->mode_flags = MIPI_DSI_MODE_VIDEO | MIPI_DSI_MODE_NO_EOT_PACKET |
++			  MIPI_DSI_CLOCK_NON_CONTINUOUS;
++
++	drm_panel_init(&ctx->panel, dev, &douglas_nt35521_panel_funcs,
++		       DRM_MODE_CONNECTOR_DSI);
++
++	ret = drm_panel_of_backlight(&ctx->panel);
++	if (ret)
++		return dev_err_probe(dev, ret, "Failed to get backlight\n");
++
++	drm_panel_add(&ctx->panel);
++
++	ret = mipi_dsi_attach(dsi);
++	if (ret < 0) {
++		dev_err(dev, "Failed to attach to DSI host: %d\n", ret);
++		drm_panel_remove(&ctx->panel);
++		return ret;
++	}
++
++	return 0;
++}
++
++static void douglas_nt35521_remove(struct mipi_dsi_device *dsi)
++{
++	struct douglas_nt35521 *ctx = mipi_dsi_get_drvdata(dsi);
++	int ret;
++
++	ret = mipi_dsi_detach(dsi);
++	if (ret < 0)
++		dev_err(&dsi->dev, "Failed to detach from DSI host: %d\n", ret);
++
++	drm_panel_remove(&ctx->panel);
++}
++
++static const struct of_device_id douglas_nt35521_of_match[] = {
++	{ .compatible = "amazon,douglas-nt35521" },
++	{ /* sentinel */ }
++};
++MODULE_DEVICE_TABLE(of, douglas_nt35521_of_match);
++
++static struct mipi_dsi_driver douglas_nt35521_driver = {
++	.probe = douglas_nt35521_probe,
++	.remove = douglas_nt35521_remove,
++	.driver = {
++		.name = "panel-amazon-douglas-nt35521",
++		.of_match_table = douglas_nt35521_of_match,
++	},
++};
++module_mipi_dsi_driver(douglas_nt35521_driver);
++
++MODULE_DESCRIPTION("DRM driver for Amazon Fire HD 8 (douglas) NT35521 panel");
++MODULE_LICENSE("GPL");
+diff --git a/drivers/input/touchscreen/goodix.c b/drivers/input/touchscreen/goodix.c
+index 53b75d83a..2f35bd90a 100644
+--- a/drivers/input/touchscreen/goodix.c
++++ b/drivers/input/touchscreen/goodix.c
+@@ -775,7 +775,8 @@ int goodix_reset_no_int_sync(struct goodix_ts_data *ts)
+ 	 * power. Only do this in the non ACPI case since some ACPI boards
+ 	 * don't have a pull-up, so there the reset pin must stay active-high.
+ 	 */
+-	if (ts->irq_pin_access_method == IRQ_PIN_ACCESS_GPIO) {
++	if (ts->irq_pin_access_method == IRQ_PIN_ACCESS_GPIO &&
++	    !of_machine_is_compatible("amazon,douglas")) {
+ 		error = gpiod_direction_input(ts->gpiod_rst);
+ 		if (error)
+ 			goto error;
+@@ -1361,6 +1362,8 @@ static int goodix_ts_probe(struct i2c_client *client,
+ 	if (error)
+ 		return error;
+ 
++	msleep(10);
++
+ reset:
+ 	if (ts->reset_controller_at_probe) {
+ 		/* reset the controller */
+diff --git a/drivers/mfd/mt6397-core.c b/drivers/mfd/mt6397-core.c
+index f6c1f80f9..26922cf51 100644
+--- a/drivers/mfd/mt6397-core.c
++++ b/drivers/mfd/mt6397-core.c
+@@ -323,19 +323,26 @@ static int mt6397_probe(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, pmic);
+ 
+-	pmic->irq = platform_get_irq(pdev, 0);
+-	if (pmic->irq <= 0)
+-		return pmic->irq;
+-
+-	ret = pmic_core->irq_init(pmic);
+-	if (ret)
+-		return ret;
++	pmic->irq = platform_get_irq_optional(pdev, 0);
++	if (pmic->irq > 0) {
++		ret = pmic_core->irq_init(pmic);
++		if (ret) {
++			dev_warn(&pdev->dev,
++				 "PMIC IRQ init failed (%d), continuing without PMIC IRQ domain\n",
++				 ret);
++			pmic->irq_domain = NULL;
++		}
++	} else {
++		dev_warn(&pdev->dev, "No PMIC IRQ configured, continuing without PMIC IRQ domain\n");
++		pmic->irq_domain = NULL;
++	}
+ 
+ 	ret = devm_mfd_add_devices(&pdev->dev, PLATFORM_DEVID_NONE,
+ 				   pmic_core->cells, pmic_core->cell_size,
+ 				   NULL, 0, pmic->irq_domain);
+ 	if (ret) {
+-		irq_domain_remove(pmic->irq_domain);
++		if (pmic->irq_domain)
++			irq_domain_remove(pmic->irq_domain);
+ 		dev_err(&pdev->dev, "failed to add child devices: %d\n", ret);
+ 	}
+ 
+diff --git a/drivers/misc/mediatek/Kconfig b/drivers/misc/mediatek/Kconfig
+index 68fb5ca4b..d67784fa5 100644
+--- a/drivers/misc/mediatek/Kconfig
++++ b/drivers/misc/mediatek/Kconfig
+@@ -2,7 +2,7 @@
+ 
+ config MTK_MT8163_CONSYS
+ 	bool "MediaTek MT8163 integrated CONSYS connectivity"
+-	depends on ARM && ARCH_MEDIATEK && OF && HAS_IOMEM
++	depends on (ARM || ARM64) && ARCH_MEDIATEK && OF && HAS_IOMEM
+ 	depends on NET && RFKILL
+ 	select CFG80211
+ 	select CRC32
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_ic_soc.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_ic_soc.c
+index 4c5b3c9a6..a1251b9bb 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_ic_soc.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_ic_soc.c
+@@ -996,16 +996,19 @@ static INT32 mtk_wcn_soc_sw_init(P_WMT_HIF_CONF pWmtHifConf)
+ #endif
+ 	/* 6.3 Multi-patch Patch download */
+ 	for (patch_index = 0; patch_index < patch_num; patch_index++) {
++		WMT_ERR_FUNC("ECHO_PATCH: starting patch_index=%d/%d\n", patch_index, patch_num);
+ 		iRet = mtk_wcn_soc_patch_dwn(patch_index);
+ 		if (iRet) {
+ 			WMT_ERR_FUNC("patch dwn fail (%d),patch_index(%d)\n", iRet, patch_index);
+ 			return -7;
+ 		}
++		WMT_ERR_FUNC("ECHO_PATCH: patch_index=%d downloaded, running init_table_3\n", patch_index);
+ 		iRet = wmt_core_init_script(init_table_3, osal_array_size(init_table_3));
+ 		if (iRet) {
+ 			WMT_ERR_FUNC("init_table_3 fail(%d)\n", iRet);
+ 			return -8;
+ 		}
++		WMT_ERR_FUNC("ECHO_PATCH: patch_index=%d init_table_3 OK\n", patch_index);
+ 	}
+ 
+ #if CFG_WMT_PATCH_DL_OPTM
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/mtk_wcn_consys_hw.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/mtk_wcn_consys_hw.c
+index dc5a41206..12030f188 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/mtk_wcn_consys_hw.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/mtk_wcn_consys_hw.c
+@@ -30,7 +30,7 @@
+ #endif /* defined(CONFIG_MTK_CLKMGR) */
+ #include <linux/pinctrl/consumer.h>
+ #include <linux/delay.h>
+-#include <asm/memblock.h>
++#include <linux/memblock.h>
+ #include "osal_typedef.h"
+ #include "mtk_wcn_consys_hw.h"
+ 
+@@ -330,9 +330,8 @@ static INT32 mtk_wmt_probe(struct platform_device *pdev)
+ #if !defined(CONFIG_MTK_GPIO_LEGACY)
+ 	consys_pinctrl = devm_pinctrl_get(&pdev->dev);
+ 	if (IS_ERR(consys_pinctrl)) {
+-		ret = PTR_ERR(consys_pinctrl);
+-		WMT_PLAT_ERR_FUNC("CanNot find consys pinctrl. ret=%d\n", ret);
+-		return PTR_ERR(consys_pinctrl);
++		WMT_PLAT_WARN_FUNC("No consys pinctrl, continuing without it\n");
++		consys_pinctrl = NULL;
+ 	}
+ #endif /* !defined(CONFIG_MTK_GPIO_LEGACY) */
+ 
+@@ -434,18 +433,20 @@ INT32 mtk_wcn_consys_hw_reg_ctrl(UINT32 on, UINT32 co_clock_type)
+ 				WMT_PLAT_ERR_FUNC("enable VCN18 fail\n");
+ 			else
+ 				WMT_PLAT_DBG_FUNC("enable VCN18 ok\n");
+-			{
++			if (consys_pinctrl) {
+ 				struct pinctrl_state *pinctrl_wifi_reset;
+ 
+ 				pinctrl_wifi_reset =
+ 					pinctrl_lookup_state(consys_pinctrl,
+ 							"wifi_reset_init");
+ 				if (IS_ERR(pinctrl_wifi_reset)) {
+-					pr_debug("[%s]Cannot find wifi_reset state.\n",
+-						__func__);
+-				} else
++					WMT_PLAT_ERR_FUNC("ECHO_CONSYS: Cannot find wifi_reset_init state (%ld)\n",
++						PTR_ERR(pinctrl_wifi_reset));
++				} else {
+ 					pinctrl_select_state(consys_pinctrl,
+ 							pinctrl_wifi_reset);
++					WMT_PLAT_ERR_FUNC("ECHO_CONSYS: selected wifi_reset_init pinctrl OK\n");
++				}
+ 
+ 			}
+ 		}
+@@ -1430,13 +1431,14 @@ emi_mpu_set_region_protection(gConEmiPhyBase,
+ 		addrPhy = addrPhy | 0x1000;
+ 
+ 		CONSYS_REG_WRITE(conn_reg.topckgen_base + CONSYS_EMI_MAPPING_OFFSET,
+-				 CONSYS_REG_READ(conn_reg.topckgen_base + CONSYS_EMI_MAPPING_OFFSET) | addrPhy);
++				 (CONSYS_REG_READ(conn_reg.topckgen_base + CONSYS_EMI_MAPPING_OFFSET) & ~0x1fff) | addrPhy);
+ 
+-		WMT_PLAT_INFO_FUNC("CONSYS_EMI_MAPPING dump(0x%08x)\n",
+-				   CONSYS_REG_READ(conn_reg.topckgen_base + CONSYS_EMI_MAPPING_OFFSET));
++		WMT_PLAT_ERR_FUNC("CONSYS_EMI_MAPPING dump(0x%08x) gConEmiPhyBase=0x%zx\n",
++				   CONSYS_REG_READ(conn_reg.topckgen_base + CONSYS_EMI_MAPPING_OFFSET),
++				   (SIZE_T)gConEmiPhyBase);
+ 
+ #if 1
+-		pEmibaseaddr = ioremap_nocache(gConEmiPhyBase + SZ_1M / 2, CONSYS_EMI_MEM_SIZE);
++		pEmibaseaddr = ioremap_wc(gConEmiPhyBase + SZ_1M / 2, CONSYS_EMI_MEM_SIZE);
+ #else
+ 		pEmibaseaddr = ioremap_nocache(CONSYS_EMI_AP_PHY_BASE, CONSYS_EMI_MEM_SIZE);
+ #endif
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/wmt_plat_alps.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/wmt_plat_alps.c
+index b8c4a41f3..bb00771a4 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/wmt_plat_alps.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/wmt_plat_alps.c
+@@ -693,8 +693,8 @@ static INT32 wmt_plat_gps_lna_ctrl(ENUM_PIN_STATE state)
+ 	WMT_PLAT_DBG_FUNC("ENTER++\n");
+ 	consys_pinctrl = mtk_wcn_consys_get_pinctrl();
+ 	if (NULL == consys_pinctrl) {
+-		WMT_PLAT_ERR_FUNC("get consys pinctrl fail\n");
+-		return -1;
++		WMT_PLAT_WARN_FUNC("No consys pinctrl, skipping GPS LNA ctrl\n");
++		return 0;
+ 	}
+ 
+ 	gps_lna_init = pinctrl_lookup_state(consys_pinctrl, "gps_lna_state_init");
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/que_mgt.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/que_mgt.c
+index 843e295aa..bf52af4af 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/que_mgt.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/que_mgt.c
+@@ -2890,7 +2890,7 @@ VOID qmProcessPktWithReordering(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb,
+ 	prReorderQueParm = ((prStaRec->aprRxReorderParamRefTbl)[prSwRfb->ucTid]);
+ 	if (!prReorderQueParm) {
+ 		/* TODO: (Tehuang) Handle the Host-FW sync issue. */
+-		prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
++		prSwRfb->eDst = RX_PKT_DESTINATION_HOST;
+ 		QUEUE_INSERT_TAIL(prReturnedQue, (P_QUE_ENTRY_T) prSwRfb);
+ 		DBGLOG(QM, WARN, "Reordering for a NULL ReorderQueParm\n");
+ 		/* ASSERT(0); */
+diff --git a/drivers/mmc/host/mtk-sd.c b/drivers/mmc/host/mtk-sd.c
+index 32c34900a..24bead93f 100644
+--- a/drivers/mmc/host/mtk-sd.c
++++ b/drivers/mmc/host/mtk-sd.c
+@@ -956,7 +956,8 @@ static void msdc_set_mclk(struct msdc_host *host, unsigned char timing, u32 hz)
+ 			      (mode << 12) | div);
+ 
+ 	clk_prepare_enable(host->src_clk_cg);
+-	readl_poll_timeout(host->base + MSDC_CFG, val, (val & MSDC_CFG_CKSTB), 0, 0);
++	if (readl_poll_timeout(host->base + MSDC_CFG, val, (val & MSDC_CFG_CKSTB), 10, 100000))
++		dev_warn(host->dev, "MSDC_CFG_CKSTB timeout (cfg=0x%x)\n", val);
+ 	sdr_set_bits(host->base + MSDC_CFG, MSDC_CFG_CKPDN);
+ 	mmc->actual_clock = sclk;
+ 	host->mclk = hz;
+@@ -1514,10 +1515,13 @@ static int msdc_ops_switch_volt(struct mmc_host *mmc, struct mmc_ios *ios)
+ 		}
+ 
+ 		/* Apply different pinctrl settings for different signal voltage */
+-		if (ios->signal_voltage == MMC_SIGNAL_VOLTAGE_180)
+-			pinctrl_select_state(host->pinctrl, host->pins_uhs);
+-		else
+-			pinctrl_select_state(host->pinctrl, host->pins_default);
++		if (ios->signal_voltage == MMC_SIGNAL_VOLTAGE_180) {
++			if (host->pinctrl && host->pins_uhs)
++				pinctrl_select_state(host->pinctrl, host->pins_uhs);
++		} else {
++			if (host->pinctrl && host->pins_default)
++				pinctrl_select_state(host->pinctrl, host->pins_default);
++		}
+ 	}
+ 	return 0;
+ }
+@@ -1598,7 +1602,8 @@ static void msdc_enable_sdio_irq(struct mmc_host *mmc, int enb)
+ 				dev_dbg(host->dev, "SDIO eint irq: %d!\n", host->eint_irq);
+ 			}
+ 
+-			pinctrl_select_state(host->pinctrl, host->pins_uhs);
++			if (host->pinctrl && host->pins_uhs)
++		pinctrl_select_state(host->pinctrl, host->pins_uhs);
+ 		} else {
+ 			dev_pm_clear_wake_irq(host->dev);
+ 		}
+@@ -2703,23 +2708,24 @@ static int msdc_drv_probe(struct platform_device *pdev)
+ 
+ 	host->pinctrl = devm_pinctrl_get(&pdev->dev);
+ 	if (IS_ERR(host->pinctrl)) {
+-		ret = PTR_ERR(host->pinctrl);
+-		dev_err(&pdev->dev, "Cannot find pinctrl!\n");
+-		goto host_free;
+-	}
+-
+-	host->pins_default = pinctrl_lookup_state(host->pinctrl, "default");
+-	if (IS_ERR(host->pins_default)) {
+-		ret = PTR_ERR(host->pins_default);
+-		dev_err(&pdev->dev, "Cannot find pinctrl default!\n");
+-		goto host_free;
+-	}
++		dev_warn(&pdev->dev, "No pinctrl, using bootloader pin mux\n");
++		host->pinctrl = NULL;
++		host->pins_default = NULL;
++		host->pins_uhs = NULL;
++	} else {
++		host->pins_default = pinctrl_lookup_state(host->pinctrl, "default");
++		if (IS_ERR(host->pins_default)) {
++			ret = PTR_ERR(host->pins_default);
++			dev_err(&pdev->dev, "Cannot find pinctrl default!\n");
++			goto host_free;
++		}
+ 
+-	host->pins_uhs = pinctrl_lookup_state(host->pinctrl, "state_uhs");
+-	if (IS_ERR(host->pins_uhs)) {
+-		ret = PTR_ERR(host->pins_uhs);
+-		dev_err(&pdev->dev, "Cannot find pinctrl uhs!\n");
+-		goto host_free;
++		host->pins_uhs = pinctrl_lookup_state(host->pinctrl, "state_uhs");
++		if (IS_ERR(host->pins_uhs)) {
++			ret = PTR_ERR(host->pins_uhs);
++			dev_err(&pdev->dev, "Cannot find pinctrl uhs!\n");
++			goto host_free;
++		}
+ 	}
+ 
+ 	/* Support for SDIO eint irq ? */
+@@ -2995,6 +3001,7 @@ static int __maybe_unused msdc_runtime_resume(struct device *dev)
+ 	msdc_restore_reg(host);
+ 
+ 	if (sdio_irq_claimed(mmc) && host->pins_eint) {
++		if (host->pinctrl && host->pins_uhs)
+ 		pinctrl_select_state(host->pinctrl, host->pins_uhs);
+ 		enable_irq(host->irq);
+ 	}
+diff --git a/drivers/pinctrl/mediatek/Kconfig b/drivers/pinctrl/mediatek/Kconfig
+index 4d5fa9925..c6c67eb39 100644
+--- a/drivers/pinctrl/mediatek/Kconfig
++++ b/drivers/pinctrl/mediatek/Kconfig
+@@ -74,7 +74,7 @@ config PINCTRL_MT8135
+ 
+ config PINCTRL_MT8163
+ 	bool "Mediatek MT8163 pin control"
+-	depends on MACH_MT8163 || COMPILE_TEST
++	depends on MACH_MT8163 || ARCH_MEDIATEK || COMPILE_TEST
+ 	depends on OF
+ 	default MACH_MT8163
+ 	select PINCTRL_MTK
+diff --git a/drivers/regulator/fan53555.c b/drivers/regulator/fan53555.c
+index ecd5a50c6..088c2ddcc 100644
+--- a/drivers/regulator/fan53555.c
++++ b/drivers/regulator/fan53555.c
+@@ -104,6 +104,7 @@ enum {
+ };
+ 
+ enum {
++	SILERGY_SYM827 = 1,
+ 	SILERGY_SYR82X = 8,
+ 	SILERGY_SYR83X = 9,
+ };
+@@ -217,6 +218,17 @@ static const unsigned int slew_rates[] = {
+ 	  500,
+ };
+ 
++static const unsigned int sym827_slew_rates[] = {
++	83333,
++	41667,
++	20833,
++	10417,
++	 5208,
++	 2604,
++	 1302,
++	  651,
++};
++
+ static const unsigned int tcs_slew_rates[] = {
+ 	18700,
+ 	 9300,
+@@ -321,8 +333,17 @@ static int fan53555_voltages_setup_fairchild(struct fan53555_device_info *di)
+ 
+ static int fan53555_voltages_setup_silergy(struct fan53555_device_info *di)
+ {
++	di->ramp_delay_table = slew_rates;
++	di->n_ramp_values = ARRAY_SIZE(slew_rates);
++
+ 	/* Init voltage range and step */
+ 	switch (di->chip_id) {
++	case SILERGY_SYM827:
++		di->vsel_min = 600000;
++		di->vsel_step = 12500;
++		di->ramp_delay_table = sym827_slew_rates;
++		di->n_ramp_values = ARRAY_SIZE(sym827_slew_rates);
++		break;
+ 	case SILERGY_SYR82X:
+ 	case SILERGY_SYR83X:
+ 		di->vsel_min = 712500;
+@@ -335,8 +356,6 @@ static int fan53555_voltages_setup_silergy(struct fan53555_device_info *di)
+ 	}
+ 	di->slew_reg = FAN53555_CONTROL;
+ 	di->slew_mask = CTL_SLEW_MASK;
+-	di->ramp_delay_table = slew_rates;
+-	di->n_ramp_values = ARRAY_SIZE(slew_rates);
+ 	di->vsel_count = FAN53555_NVOLTAGES;
+ 
+ 	return 0;
+@@ -533,6 +552,9 @@ static const struct of_device_id __maybe_unused fan53555_dt_ids[] = {
+ 	}, {
+ 		.compatible = "fcs,fan53555",
+ 		.data = (void *)FAN53555_VENDOR_FAIRCHILD
++	}, {
++		.compatible = "silergy,sym827",
++		.data = (void *)FAN53555_VENDOR_SILERGY,
+ 	}, {
+ 		.compatible = "silergy,syr827",
+ 		.data = (void *)FAN53555_VENDOR_SILERGY,
+diff --git a/drivers/soc/mediatek/Kconfig b/drivers/soc/mediatek/Kconfig
+index 028867316..533da8ad2 100644
+--- a/drivers/soc/mediatek/Kconfig
++++ b/drivers/soc/mediatek/Kconfig
+@@ -57,7 +57,7 @@ config MTK_SCPSYS
+ 
+ config MTK_SCPSYS_MT8163
+ 	bool "MediaTek MT8163 SCPSYS Support"
+-	depends on MACH_MT8163 || COMPILE_TEST
++	depends on ARCH_MEDIATEK || COMPILE_TEST
+ 	depends on OF
+ 	select MTK_INFRACFG
+ 	default MACH_MT8163
+diff --git a/drivers/soc/mediatek/Makefile b/drivers/soc/mediatek/Makefile
+index 92b2f3918..b42dfe948 100644
+--- a/drivers/soc/mediatek/Makefile
++++ b/drivers/soc/mediatek/Makefile
+@@ -9,3 +9,4 @@ obj-$(CONFIG_MTK_SCPSYS_PM_DOMAINS) += mtk-pm-domains.o
+ obj-$(CONFIG_MTK_MMSYS) += mtk-mmsys.o
+ obj-$(CONFIG_MTK_MMSYS) += mtk-mutex.o
+ obj-$(CONFIG_MTK_SVS) += mtk-svs.o
++obj-$(CONFIG_ARCH_MEDIATEK) += douglas-quirks.o
+diff --git a/drivers/soc/mediatek/douglas-quirks.c b/drivers/soc/mediatek/douglas-quirks.c
+new file mode 100644
+index 000000000..40616cb72
+--- /dev/null
++++ b/drivers/soc/mediatek/douglas-quirks.c
+@@ -0,0 +1,72 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Experimental: replicate SoC-level state the Amazon vendor kernel sets at boot
++ * (mt_dcm_init defaults, AP_PLL_CON5) to find what blocks AFE uplink memif data.
++ * Variant selected at build time; see HANDOFF.md section 8A.
++ */
++#include <linux/init.h>
++#include <linux/io.h>
++#include <linux/printk.h>
++
++#ifndef DOUGLAS_QUIRK_VARIANT
++#define DOUGLAS_QUIRK_VARIANT 0
++#endif
++
++static void __init q_rmw(void __iomem *b, u32 off, u32 mask, u32 val, const char *name)
++{
++	u32 old = readl(b + off), new = (old & ~mask) | (val & mask);
++
++	writel(new, b + off);
++	pr_info("douglas-quirks: %s %08x -> %08x (read back %08x)\n", name, old, new, readl(b + off));
++}
++
++static int __init douglas_quirks_init(void)
++{
++	void __iomem *infra = ioremap(0x10001000, 0x1000);
++	void __iomem *dramc = ioremap(0x10004000, 0x1000);
++	void __iomem *apmixed = ioremap(0x1000c000, 0x1000);
++
++	if (!infra || !dramc || !apmixed)
++		return -ENOMEM;
++	pr_info("douglas-quirks: variant %d\n", DOUGLAS_QUIRK_VARIANT);
++#if DOUGLAS_QUIRK_VARIANT == 1
++	/* vendor mt_dcm_init(): armcore DCM mode1, misc DCM default (pmic dcm off), EMI DCM */
++	q_rmw(infra, 0x10, 0x7 << 4, 0x7 << 4, "INFRA_TOPCKGEN_DCMCTL");
++	q_rmw(infra, 0x74, (1 << 29) | (1 << 28) | (1 << 22) | (1 << 21), 0xb0000000, "PERI_BUS_DCM_CTRL misc");
++	q_rmw(dramc, 0x1dc, 1 << 25, 1 << 25, "DRAMC_PD_CTRL");
++	q_rmw(dramc, 0x828, 1 << 25, 1 << 25, "DFS_DRAMC_PD_CTRL");
++#elif DOUGLAS_QUIRK_VARIANT == 2
++	{
++		/* one-shot guard: WDT_NONRST_REG2 survives a watchdog reset */
++		void __iomem *wdt = ioremap(0x10007000, 0x100);
++		u32 nr = readl(wdt + 0x24);
++
++		if (nr & BIT(31)) {
++			pr_info("douglas-quirks: previous attempt did not survive, SKIPPING AP_PLL_CON5 (nonrst2=%08x)\n", nr);
++			writel(nr & ~BIT(31), wdt + 0x24);
++		} else {
++			writel(nr | BIT(31), wdt + 0x24);
++			q_rmw(apmixed, 0x14, 0xffffffff, 0, "AP_PLL_CON5");
++		}
++		iounmap(wdt);
++	}
++#endif
++	iounmap(infra); iounmap(dramc); iounmap(apmixed);
++	return 0;
++}
++arch_initcall(douglas_quirks_init);
++
++static int __init douglas_quirks_survived(void)
++{
++	void __iomem *wdt = ioremap(0x10007000, 0x100);
++
++	if (wdt) {
++		u32 nr = readl(wdt + 0x24);
++
++		pr_info("douglas-quirks: survived to late_initcall, clearing guard (nonrst2=%08x)\n", nr);
++		writel(nr & ~BIT(31), wdt + 0x24);
++		iounmap(wdt);
++	}
++	return 0;
++}
++late_initcall(douglas_quirks_survived);
+diff --git a/drivers/soc/mediatek/mtk-mmsys.c b/drivers/soc/mediatek/mtk-mmsys.c
+index d2c7a87aa..f367f3a91 100644
+--- a/drivers/soc/mediatek/mtk-mmsys.c
++++ b/drivers/soc/mediatek/mtk-mmsys.c
+@@ -68,6 +68,20 @@ static const struct mtk_mmsys_match_data mt6797_mmsys_match_data = {
+ 	},
+ };
+ 
++static const struct mtk_mmsys_driver_data mt8163_mmsys_driver_data = {
++	/* clk-mt8163.c registers the mmsys clocks via CLK_OF_DECLARE */
++	.clk_driver = NULL,
++	.routes = mt8167_mmsys_routing_table,
++	.num_routes = ARRAY_SIZE(mt8167_mmsys_routing_table),
++};
++
++static const struct mtk_mmsys_match_data mt8163_mmsys_match_data = {
++	.num_drv_data = 1,
++	.drv_data = {
++		&mt8163_mmsys_driver_data,
++	},
++};
++
+ static const struct mtk_mmsys_driver_data mt8167_mmsys_driver_data = {
+ 	.clk_driver = "clk-mt8167-mm",
+ 	.routes = mt8167_mmsys_routing_table,
+@@ -302,7 +316,7 @@ static const struct reset_control_ops mtk_mmsys_reset_ops = {
+ static int mtk_mmsys_probe(struct platform_device *pdev)
+ {
+ 	struct device *dev = &pdev->dev;
+-	struct platform_device *clks;
++	struct platform_device *clks = NULL;
+ 	struct platform_device *drm;
+ 	const struct mtk_mmsys_match_data *match_data;
+ 	struct mtk_mmsys *mmsys;
+@@ -355,10 +369,13 @@ static int mtk_mmsys_probe(struct platform_device *pdev)
+ 
+ 	platform_set_drvdata(pdev, mmsys);
+ 
+-	clks = platform_device_register_data(&pdev->dev, mmsys->data->clk_driver,
+-					     PLATFORM_DEVID_AUTO, NULL, 0);
+-	if (IS_ERR(clks))
+-		return PTR_ERR(clks);
++	if (mmsys->data->clk_driver) {
++		clks = platform_device_register_data(&pdev->dev,
++						     mmsys->data->clk_driver,
++						     PLATFORM_DEVID_AUTO, NULL, 0);
++		if (IS_ERR(clks))
++			return PTR_ERR(clks);
++	}
+ 
+ 	drm = platform_device_register_data(&pdev->dev, "mediatek-drm",
+ 					    PLATFORM_DEVID_AUTO, NULL, 0);
+@@ -387,6 +404,10 @@ static const struct of_device_id of_match_mtk_mmsys[] = {
+ 		.compatible = "mediatek,mt6797-mmsys",
+ 		.data = &mt6797_mmsys_match_data,
+ 	},
++	{
++		.compatible = "mediatek,mt8163-mmsys",
++		.data = &mt8163_mmsys_match_data,
++	},
+ 	{
+ 		.compatible = "mediatek,mt8167-mmsys",
+ 		.data = &mt8167_mmsys_match_data,
+diff --git a/drivers/soc/mediatek/mtk-mutex.c b/drivers/soc/mediatek/mtk-mutex.c
+index c1a33d520..5614d9c7c 100644
+--- a/drivers/soc/mediatek/mtk-mutex.c
++++ b/drivers/soc/mediatek/mtk-mutex.c
+@@ -262,6 +262,21 @@ static const unsigned int mt2712_mutex_mod[DDP_COMPONENT_ID_MAX] = {
+ 	[DDP_COMPONENT_WDMA1] = MT2712_MUTEX_MOD_DISP_WDMA1,
+ };
+ 
++static const unsigned int mt8163_mutex_mod[DDP_COMPONENT_ID_MAX] = {
++	[DDP_COMPONENT_AAL0] = MT8167_MUTEX_MOD_DISP_AAL,
++	[DDP_COMPONENT_CCORR] = MT8167_MUTEX_MOD_DISP_COLOR, /* bit 12 on MT8163 */
++	[DDP_COMPONENT_COLOR0] = MT8167_MUTEX_MOD_DISP_CCORR, /* bit 11 on MT8163 */
++	[DDP_COMPONENT_DITHER0] = MT8167_MUTEX_MOD_DISP_DITHER,
++	[DDP_COMPONENT_GAMMA] = MT8167_MUTEX_MOD_DISP_GAMMA,
++	[DDP_COMPONENT_OVL0] = MT8167_MUTEX_MOD_DISP_OVL0,
++	[DDP_COMPONENT_OVL1] = MT8167_MUTEX_MOD_DISP_OVL1,
++	[DDP_COMPONENT_PWM0] = 17,
++	[DDP_COMPONENT_RDMA0] = MT8167_MUTEX_MOD_DISP_RDMA0,
++	[DDP_COMPONENT_RDMA1] = MT8167_MUTEX_MOD_DISP_RDMA1,
++	[DDP_COMPONENT_UFOE] = MT8167_MUTEX_MOD_DISP_UFOE,
++	[DDP_COMPONENT_WDMA0] = MT8167_MUTEX_MOD_DISP_WDMA0,
++};
++
+ static const unsigned int mt8167_mutex_mod[DDP_COMPONENT_ID_MAX] = {
+ 	[DDP_COMPONENT_AAL0] = MT8167_MUTEX_MOD_DISP_AAL,
+ 	[DDP_COMPONENT_CCORR] = MT8167_MUTEX_MOD_DISP_CCORR,
+@@ -468,6 +483,14 @@ static const struct mtk_mutex_data mt6795_mutex_driver_data = {
+ 	.mutex_sof_reg = MT2701_MUTEX0_SOF0,
+ };
+ 
++static const struct mtk_mutex_data mt8163_mutex_driver_data = {
++	.mutex_mod = mt8163_mutex_mod,
++	.mutex_sof = mt8167_mutex_sof,
++	.mutex_mod_reg = MT2701_MUTEX0_MOD0,
++	.mutex_sof_reg = MT2701_MUTEX0_SOF0,
++	.no_clk = true,
++};
++
+ static const struct mtk_mutex_data mt8167_mutex_driver_data = {
+ 	.mutex_mod = mt8167_mutex_mod,
+ 	.mutex_sof = mt8167_mutex_sof,
+@@ -844,6 +867,8 @@ static const struct of_device_id mutex_driver_dt_match[] = {
+ 	  .data = &mt2712_mutex_driver_data},
+ 	{ .compatible = "mediatek,mt6795-disp-mutex",
+ 	  .data = &mt6795_mutex_driver_data},
++	{ .compatible = "mediatek,mt8163-disp-mutex",
++	  .data = &mt8163_mutex_driver_data},
+ 	{ .compatible = "mediatek,mt8167-disp-mutex",
+ 	  .data = &mt8167_mutex_driver_data},
+ 	{ .compatible = "mediatek,mt8173-disp-mutex",
+diff --git a/drivers/thermal/mtk_thermal.c b/drivers/thermal/mtk_thermal.c
+index 68a5e07ee..1ed4c2ab8 100644
+--- a/drivers/thermal/mtk_thermal.c
++++ b/drivers/thermal/mtk_thermal.c
+@@ -32,6 +32,8 @@
+ #define AUXADC_DATA(channel)	(0x14 + (channel) * 4)
+ 
+ #define APMIXED_SYS_TS_CON1	0x604
++/* TS_CON1[5:4] = RG_TS2AUXADC; 2'b00 = buffer on, TSMCU routed to AUXADC */
++#define TS_CON1_TS2AUXADC_MASK	GENMASK(5, 4)
+ 
+ /* Thermal Controller Registers */
+ #define TEMP_MONCTL0		0x000
+@@ -282,6 +284,12 @@ struct mtk_thermal_data {
+ 	const int num_controller;
+ 	const int *controller_offset;
+ 	bool need_switch_bank;
++	/*
++	 * Some V1 SoCs (MT8163) come out of the bootloader with the
++	 * temperature sensor buffer disabled, so every TEMP_MSRx reads 0.
++	 * See mtk_thermal_ts2auxadc_on().
++	 */
++	bool enable_ts2auxadc;
+ 	struct thermal_bank_cfg bank_data[MAX_NUM_ZONES];
+ 	enum mtk_thermal_version version;
+ };
+@@ -351,10 +359,11 @@ static const int mt8173_vts_index[MT8173_NUM_SENSORS] = {
+ 	VTS1, VTS2, VTS3, VTS4, VTSABB
+ };
+ 
++/* Vendor mtk_ts_cpu.c banks: CPU = TS1+TS2, GPU = TS2, SOC = TS3. TS4/TSABB have no fuse data. */
+ static const int mt8163_bank_data[MT8163_NUM_ZONES][4] = {
+ 	{ MT8163_TS1, MT8163_TS2 },
+-	{ MT8163_TS3, MT8163_TSABB },
+-	{ MT8163_TS4, MT8163_TS2, MT8163_TS3, MT8163_TSABB },
++	{ MT8163_TS2 },
++	{ MT8163_TS3 },
+ };
+ 
+ static const int mt8163_msr[MT8163_NUM_SENSORS_PER_ZONE] = {
+@@ -477,16 +486,17 @@ static const struct mtk_thermal_data mt8163_thermal_data = {
+ 			.num_sensors = 2,
+ 			.sensors = mt8163_bank_data[0],
+ 		}, {
+-			.num_sensors = 2,
++			.num_sensors = 1,
+ 			.sensors = mt8163_bank_data[1],
+ 		}, {
+-			.num_sensors = 4,
++			.num_sensors = 1,
+ 			.sensors = mt8163_bank_data[2],
+ 		},
+ 	},
+ 	.msr = mt8163_msr,
+ 	.adcpnp = mt8163_adcpnp,
+ 	.sensor_mux_values = mt8163_mux_values,
++	.enable_ts2auxadc = true,
+ 	.version = MTK_THERMAL_V1,
+ };
+ 
+@@ -967,16 +977,28 @@ static int mtk_thermal_get_calibration_data(struct device *dev,
+ 	if (IS_ERR(cell)) {
+ 		if (PTR_ERR(cell) == -EPROBE_DEFER)
+ 			return PTR_ERR(cell);
+-		return 0;
++		/*
++		 * No efuse/nvmem provider: allow the three raw calibration
++		 * words to be given directly (e.g. copied from the bootloader's
++		 * "atag,devinfo" data[7..9] on Amazon douglas, whose efuse is
++		 * not memory-mapped).
++		 */
++		buf = kcalloc(3, sizeof(u32), GFP_KERNEL);
++		if (!buf)
++			return -ENOMEM;
++		if (of_property_read_u32_array(dev->of_node, "mediatek,calibration-data", buf, 3)) {
++			kfree(buf);
++			return 0;
++		}
++		dev_info(dev, "using DT calibration data %08x %08x %08x\n", buf[0], buf[1], buf[2]);
++		len = 3 * sizeof(u32);
++	} else {
++		buf = (u32 *)nvmem_cell_read(cell, &len);
++		nvmem_cell_put(cell);
++		if (IS_ERR(buf))
++			return PTR_ERR(buf);
+ 	}
+ 
+-	buf = (u32 *)nvmem_cell_read(cell, &len);
+-
+-	nvmem_cell_put(cell);
+-
+-	if (IS_ERR(buf))
+-		return PTR_ERR(buf);
+-
+ 	if (len < 3 * sizeof(u32)) {
+ 		dev_warn(dev, "invalid calibration data\n");
+ 		ret = -EINVAL;
+@@ -1028,6 +1050,32 @@ static const struct of_device_id mtk_thermal_of_match[] = {
+ };
+ MODULE_DEVICE_TABLE(of, mtk_thermal_of_match);
+ 
++/*
++ * Enable the temperature sensor buffer on V1 controllers whose bootloader
++ * leaves it off. MT8163 boots with TS_CON1 = 0x10 (RG_TS2AUXADC = 2'b01), and
++ * every TEMP_MSRx then reads back 0. Amazon's own MT8163 driver turns it on by
++ * clearing just those two bits and waiting:
++ *
++ *	temp = DRV_Reg32(TS_CON1);
++ *	temp &= ~(0x00000030);	// TS_CON1[5:4]=2'b00: Buffer on, TSMCU to AUXADC
++ *	THERMAL_WRAP_WR32(temp, TS_CON1);
++ *	// RG_TS2AUXADC < set from 2'b11 to 2'b00 when resume.
++ *	// wait 100uS than turn on thermal controller.
++ *	udelay(200);
++ *
++ * mtk_thermal_turn_on_buffer() below does the equivalent but is V2-only and
++ * also rewrites TS_CON1[2:0], so keep this faithful to the vendor for V1.
++ */
++static void mtk_thermal_ts2auxadc_on(void __iomem *apmixed_base)
++{
++	u32 tmp;
++
++	tmp = readl(apmixed_base + APMIXED_SYS_TS_CON1);
++	tmp &= ~TS_CON1_TS2AUXADC_MASK;
++	writel(tmp, apmixed_base + APMIXED_SYS_TS_CON1);
++	udelay(200);
++}
++
+ static void mtk_thermal_turn_on_buffer(void __iomem *apmixed_base)
+ {
+ 	int tmp;
+@@ -1138,6 +1186,8 @@ static int mtk_thermal_probe(struct platform_device *pdev)
+ 	if (mt->conf->version == MTK_THERMAL_V2) {
+ 		mtk_thermal_turn_on_buffer(apmixed_base);
+ 		mtk_thermal_release_periodic_ts(mt, auxadc_base);
++	} else if (mt->conf->enable_ts2auxadc) {
++		mtk_thermal_ts2auxadc_on(apmixed_base);
+ 	}
+ 
+ 	for (ctrl_id = 0; ctrl_id < mt->conf->num_controller ; ctrl_id++)
+diff --git a/drivers/usb/musb/mediatek.c b/drivers/usb/musb/mediatek.c
+index dd3008281..2f26c2461 100644
+--- a/drivers/usb/musb/mediatek.c
++++ b/drivers/usb/musb/mediatek.c
+@@ -1264,6 +1264,7 @@ static int mtk_musb_remove(struct platform_device *pdev)
+ static const struct of_device_id mtk_musb_match[] = {
+ 	{ .compatible = "mediatek,mt8163-usb20", .data = &mt8163_musb_data },
+ 	{ .compatible = "mediatek,mtk-musb", .data = &mtk_musb_data },
++	{ .compatible = "mediatek,mt8163-usb20", .data = &mt8163_musb_data },
+ 	{},
+ };
+ MODULE_DEVICE_TABLE(of, mtk_musb_match);
+diff --git a/drivers/watchdog/mtk_wdt.c b/drivers/watchdog/mtk_wdt.c
+index eff6e8926..42cefbc49 100644
+--- a/drivers/watchdog/mtk_wdt.c
++++ b/drivers/watchdog/mtk_wdt.c
+@@ -473,7 +473,17 @@ static int mtk_wdt_suspend(struct device *dev)
+ {
+ 	struct mtk_wdt_dev *mtk_wdt = dev_get_drvdata(dev);
+ 
+-	if (watchdog_active(&mtk_wdt->wdt_dev))
++	/*
++	 * Also stop a watchdog that is only WDOG_HW_RUNNING. On boards where
++	 * the bootloader leaves the watchdog enabled (e.g. the MT8163 Fire
++	 * HD 8, which boots with "Watchdog enabled (timeout=31 sec,
++	 * nowayout=0)"), the kernel adopts the running hardware without ever
++	 * calling watchdog_start(), so watchdog_active() is false even though
++	 * the counter is live. Left alone it keeps counting across suspend and
++	 * resets the board partway through sleep.
++	 */
++	if (watchdog_active(&mtk_wdt->wdt_dev) ||
++	    watchdog_hw_running(&mtk_wdt->wdt_dev))
+ 		mtk_wdt_stop(&mtk_wdt->wdt_dev);
+ 
+ 	return 0;
+@@ -483,7 +493,8 @@ static int mtk_wdt_resume(struct device *dev)
+ {
+ 	struct mtk_wdt_dev *mtk_wdt = dev_get_drvdata(dev);
+ 
+-	if (watchdog_active(&mtk_wdt->wdt_dev)) {
++	if (watchdog_active(&mtk_wdt->wdt_dev) ||
++	    watchdog_hw_running(&mtk_wdt->wdt_dev)) {
+ 		mtk_wdt_start(&mtk_wdt->wdt_dev);
+ 		mtk_wdt_ping(&mtk_wdt->wdt_dev);
+ 	}
+@@ -494,6 +505,7 @@ static int mtk_wdt_resume(struct device *dev)
+ static const struct of_device_id mtk_wdt_dt_ids[] = {
+ 	{ .compatible = "mediatek,mt2712-wdt", .data = &mt2712_data },
+ 	{ .compatible = "mediatek,mt6589-wdt" },
++	{ .compatible = "mediatek,mt8163-rgu" },
+ 	{ .compatible = "mediatek,mt7986-wdt", .data = &mt7986_data },
+ 	{ .compatible = "mediatek,mt8183-wdt", .data = &mt8183_data },
+ 	{ .compatible = "mediatek,mt8186-wdt", .data = &mt8186_data },
+diff --git a/init/main.c b/init/main.c
+index a677b6a2c..6107aa3c9 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -65,6 +65,9 @@
+ #include <linux/page_ext.h>
+ #include <linux/debug_locks.h>
+ #include <linux/debugobjects.h>
++
++/* douglas: uncached DRAM stage markers (arch/arm64/kernel/setup.c) */
++extern void kmark(u8 c);
+ #include <linux/lockdep.h>
+ #include <linux/kmemleak.h>
+ #include <linux/padata.h>
+@@ -701,6 +704,8 @@ noinline void __ref rest_init(void)
+ 	struct task_struct *tsk;
+ 	int pid;
+ 
++	kmark('G');			/* rest_init: userspace boot beginning */
++
+ 	rcu_scheduler_starting();
+ 	/*
+ 	 * We need to spawn init first so that it obtains pid 1, however
+@@ -1415,6 +1420,7 @@ static void __init do_basic_setup(void)
+ 	init_irq_proc();
+ 	do_ctors();
+ 	do_initcalls();
++	kmark('H');			/* all initcalls done, drivers probed */
+ }
+ 
+ static void __init do_pre_smp_initcalls(void)
+@@ -1532,6 +1538,7 @@ static int __ref kernel_init(void *unused)
+ 	kgdb_free_init_mem();
+ 	exit_boot_config();
+ 	free_initmem();
++	kmark('I');			/* initmem freed, about to exec /init */
+ 	mark_readonly();
+ 
+ 	/*
+diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
+index c93beab96..ee95fcf6d 100644
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -2141,6 +2141,10 @@ static u16 printk_sprint(char *text, u16 size, int facility,
+ 	}
+ 
+ 	trace_console_rcuidle(text, text_len);
++	{
++		extern void kmark_log(const char *s, size_t len);
++		kmark_log(text, text_len);
++	}
+ 
+ 	return text_len;
+ }
+diff --git a/sound/soc/mediatek/Kconfig b/sound/soc/mediatek/Kconfig
+index fe6668c4c..066621694 100644
+--- a/sound/soc/mediatek/Kconfig
++++ b/sound/soc/mediatek/Kconfig
+@@ -35,6 +35,13 @@ config SND_SOC_MT8163_RADAR_PUFFIN
+ 	  DAC, aggregate TLV320ADC3101 microphone component and FPGA SPI
+ 	  capture path.
+ 
++config SND_SOC_MT8163_DOUGLAS
++	tristate "ASoC machine driver for Amazon Fire HD 8 (douglas)"
++	depends on SND_SOC_MT8163
++	help
++	  Enable the MT8163 + MT6323 PMIC sound card for Amazon Fire HD 8
++	  (douglas).
++
+ config SND_SOC_MT2701
+ 	tristate "ASoC support for Mediatek MT2701 chip"
+ 	depends on ARCH_MEDIATEK
+diff --git a/sound/soc/mediatek/mt8163/Makefile b/sound/soc/mediatek/mt8163/Makefile
+index a2d47184e..915f1a4bd 100644
+--- a/sound/soc/mediatek/mt8163/Makefile
++++ b/sound/soc/mediatek/mt8163/Makefile
+@@ -3,5 +3,6 @@
+ snd-soc-mt8163-objs := mt8163-afe.o mt8163-mclk.o
+ obj-$(CONFIG_SND_SOC_MT8163) += snd-soc-mt8163.o
+ obj-$(CONFIG_SND_SOC_MT8163_RADAR_PUFFIN) += snd-soc-mt8163-radar-puffin.o
++obj-$(CONFIG_SND_SOC_MT8163_DOUGLAS) += mt8163-douglas.o
+ 
+ snd-soc-mt8163-radar-puffin-objs := mt8163-radar-puffin.o
+diff --git a/sound/soc/mediatek/mt8163/mt8163-douglas.c b/sound/soc/mediatek/mt8163/mt8163-douglas.c
+new file mode 100644
+index 000000000..977ccb45d
+--- /dev/null
++++ b/sound/soc/mediatek/mt8163/mt8163-douglas.c
+@@ -0,0 +1,266 @@
++// SPDX-License-Identifier: GPL-2.0-only
++/*
++ * Amazon Fire HD 8 (2017, douglas) MT8163 + MT6323 PMIC ASoC machine driver.
++ */
++
++#include <linux/delay.h>
++#include <linux/mfd/mt6323/registers.h>
++#include <linux/module.h>
++#include <linux/mutex.h>
++#include <linux/of.h>
++#include <linux/of_platform.h>
++#include <linux/platform_device.h>
++#include <linux/regmap.h>
++#include <sound/control.h>
++#include <sound/pcm.h>
++#include <sound/soc.h>
++
++#define ABB_AFE_CON0		0x4000
++#define ABB_AFE_CON1		0x4002
++#define ABB_AFE_CON10		0x4014
++#define ABB_AFE_CON11		0x4016
++#define AFE_PMIC_NEWIF_CFG0	0x4024
++
++struct douglas_audio {
++	struct snd_soc_card card;
++	struct regmap *pmic_regmap;
++	struct mutex lock;
++	bool dac_enabled;
++	unsigned int volume;
++};
++
++static void douglas_apply_volume(struct douglas_audio *priv)
++{
++	unsigned int regval;
++	unsigned int idx = priv->volume;
++
++	if (idx > 7)
++		idx = 7;
++	regval = 7 - idx;
++	regmap_update_bits(priv->pmic_regmap, MT6323_AUDTOP_CON5,
++			   0x7700, (regval << 12) | (regval << 8));
++}
++
++static void douglas_pmic_dac_enable(struct douglas_audio *priv, bool enable)
++{
++	u32 val = 0;
++
++	mutex_lock(&priv->lock);
++	if (priv->dac_enabled == enable) {
++		mutex_unlock(&priv->lock);
++		return;
++	}
++
++	if (enable) {
++		regmap_update_bits(priv->pmic_regmap, MT6323_TOP_CKPDN0,
++				   BIT(0), BIT(0));
++		regmap_write(priv->pmic_regmap, MT6323_TOP_CKPDN1_CLR, 0x0100);
++		udelay(250);
++
++		/* 48 kHz DL new interface & ABB AFE */
++		regmap_write(priv->pmic_regmap, AFE_PMIC_NEWIF_CFG0, 0x8330);
++		regmap_update_bits(priv->pmic_regmap, ABB_AFE_CON1,
++				   0x000f, 0x000a);
++		regmap_read(priv->pmic_regmap, ABB_AFE_CON11, &val);
++		regmap_update_bits(priv->pmic_regmap, ABB_AFE_CON11,
++				   0x0100, ((val & 1) ? 0 : 1) << 8);
++		regmap_update_bits(priv->pmic_regmap, ABB_AFE_CON0,
++				   0x0001, 0x0001);
++
++		/* DC compensation + Analog Amp power-on */
++		regmap_update_bits(priv->pmic_regmap, ABB_AFE_CON10,
++				   0x0001, 0x0001);
++		regmap_read(priv->pmic_regmap, ABB_AFE_CON11, &val);
++		regmap_update_bits(priv->pmic_regmap, ABB_AFE_CON11,
++				   0x0200, ((val & 2) ? 0 : 1) << 9);
++
++		regmap_write(priv->pmic_regmap, MT6323_AUDTOP_CON6, 0xF7F2);
++		regmap_update_bits(priv->pmic_regmap, MT6323_AUDTOP_CON0,
++				   0xf000, 0x7000);
++		regmap_write(priv->pmic_regmap, MT6323_AUDTOP_CON5, 0x0014);
++		regmap_write(priv->pmic_regmap, MT6323_AUDTOP_CON4, 0x007C);
++		mdelay(10);
++		regmap_write(priv->pmic_regmap, MT6323_AUDTOP_CON6, 0xF5BA);
++		regmap_write(priv->pmic_regmap, MT6323_AUDTOP_CON5, 0x2214);
++		douglas_apply_volume(priv);
++	} else {
++		regmap_write(priv->pmic_regmap, MT6323_AUDTOP_CON5, 0x0014);
++		regmap_write(priv->pmic_regmap, MT6323_AUDTOP_CON6, 0xF7F2);
++		regmap_write(priv->pmic_regmap, MT6323_AUDTOP_CON4, 0x0000);
++		regmap_update_bits(priv->pmic_regmap, MT6323_AUDTOP_CON0,
++				   0x1000, 0x0000);
++		regmap_write(priv->pmic_regmap, MT6323_AUDTOP_CON6, 0x37E2);
++
++		regmap_update_bits(priv->pmic_regmap, ABB_AFE_CON0,
++				   0x0001, 0x0000);
++		regmap_read(priv->pmic_regmap, ABB_AFE_CON11, &val);
++		regmap_update_bits(priv->pmic_regmap, ABB_AFE_CON11,
++				   0x0100, ((val & 1) ? 0 : 1) << 8);
++		regmap_write(priv->pmic_regmap, MT6323_TOP_CKPDN1_SET, 0x0100);
++		regmap_update_bits(priv->pmic_regmap, MT6323_TOP_CKPDN0,
++				   BIT(0), 0);
++	}
++
++	priv->dac_enabled = enable;
++	mutex_unlock(&priv->lock);
++}
++
++static int douglas_dl1_prepare(struct snd_pcm_substream *substream)
++{
++	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
++	struct douglas_audio *priv = snd_soc_card_get_drvdata(rtd->card);
++
++	douglas_pmic_dac_enable(priv, true);
++	return 0;
++}
++
++static void douglas_dl1_shutdown(struct snd_pcm_substream *substream)
++{
++	struct snd_soc_pcm_runtime *rtd = asoc_substream_to_rtd(substream);
++	struct douglas_audio *priv = snd_soc_card_get_drvdata(rtd->card);
++
++	douglas_pmic_dac_enable(priv, false);
++}
++
++static const struct snd_soc_ops douglas_dl1_ops = {
++	.prepare = douglas_dl1_prepare,
++	.shutdown = douglas_dl1_shutdown,
++};
++
++static int douglas_vol_info(struct snd_kcontrol *kcontrol,
++			    struct snd_ctl_elem_info *uinfo)
++{
++	uinfo->type = SNDRV_CTL_ELEM_TYPE_INTEGER;
++	uinfo->count = 1;
++	uinfo->value.integer.min = 0;
++	uinfo->value.integer.max = 7;
++	return 0;
++}
++
++static int douglas_vol_get(struct snd_kcontrol *kcontrol,
++			   struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_card *card = snd_kcontrol_chip(kcontrol);
++	struct douglas_audio *priv = snd_soc_card_get_drvdata(card);
++
++	ucontrol->value.integer.value[0] = priv->volume;
++	return 0;
++}
++
++static int douglas_vol_put(struct snd_kcontrol *kcontrol,
++			   struct snd_ctl_elem_value *ucontrol)
++{
++	struct snd_soc_card *card = snd_kcontrol_chip(kcontrol);
++	struct douglas_audio *priv = snd_soc_card_get_drvdata(card);
++	unsigned int val = ucontrol->value.integer.value[0];
++
++	if (val > 7)
++		val = 7;
++	mutex_lock(&priv->lock);
++	priv->volume = val;
++	if (priv->dac_enabled)
++		douglas_apply_volume(priv);
++	mutex_unlock(&priv->lock);
++	return 1;
++}
++
++static const struct snd_kcontrol_new douglas_controls[] = {
++	{
++		.iface = SNDRV_CTL_ELEM_IFACE_MIXER,
++		.name = "Master Playback Volume",
++		.info = douglas_vol_info,
++		.get = douglas_vol_get,
++		.put = douglas_vol_put,
++	},
++};
++
++SND_SOC_DAILINK_DEFS(douglas_playback,
++	DAILINK_COMP_ARRAY(COMP_CPU("mt-soc-dl1dai-driver")),
++	DAILINK_COMP_ARRAY(COMP_DUMMY()),
++	DAILINK_COMP_ARRAY(COMP_EMPTY()));
++
++static struct snd_soc_dai_link douglas_dai_links[] = {
++	{
++		.name = "Douglas Playback",
++		.stream_name = "Douglas Playback",
++		.ops = &douglas_dl1_ops,
++		.playback_only = 1,
++		.nonatomic = true,
++		SND_SOC_DAILINK_REG(douglas_playback),
++	},
++};
++
++static int douglas_audio_probe(struct platform_device *pdev)
++{
++	struct device *dev = &pdev->dev;
++	struct device_node *afe_np, *pmic_np;
++	struct platform_device *pmic_pdev;
++	struct douglas_audio *priv;
++	int ret;
++
++	priv = devm_kzalloc(dev, sizeof(*priv), GFP_KERNEL);
++	if (!priv)
++		return -ENOMEM;
++	mutex_init(&priv->lock);
++	priv->volume = 5;
++
++	afe_np = of_parse_phandle(dev->of_node, "mediatek,afe", 0);
++	if (!afe_np)
++		return dev_err_probe(dev, -ENODEV, "missing mediatek,afe\n");
++
++	pmic_np = of_parse_phandle(dev->of_node, "mediatek,pmic", 0);
++	if (!pmic_np) {
++		of_node_put(afe_np);
++		return dev_err_probe(dev, -ENODEV, "missing mediatek,pmic\n");
++	}
++	pmic_pdev = of_find_device_by_node(pmic_np);
++	of_node_put(pmic_np);
++	if (!pmic_pdev) {
++		of_node_put(afe_np);
++		return dev_err_probe(dev, -EPROBE_DEFER, "PMIC not ready\n");
++	}
++	priv->pmic_regmap = dev_get_regmap(pmic_pdev->dev.parent, NULL);
++	put_device(&pmic_pdev->dev);
++	if (!priv->pmic_regmap) {
++		of_node_put(afe_np);
++		return dev_err_probe(dev, -EPROBE_DEFER, "PMIC regmap not ready\n");
++	}
++
++	douglas_dai_links[0].cpus->of_node = afe_np;
++	douglas_dai_links[0].platforms->of_node = afe_np;
++
++	priv->card.name = "mt8163-douglas";
++	priv->card.owner = THIS_MODULE;
++	priv->card.dev = dev;
++	priv->card.dai_link = douglas_dai_links;
++	priv->card.num_links = ARRAY_SIZE(douglas_dai_links);
++	priv->card.controls = douglas_controls;
++	priv->card.num_controls = ARRAY_SIZE(douglas_controls);
++	snd_soc_card_set_drvdata(&priv->card, priv);
++
++	ret = devm_snd_soc_register_card(dev, &priv->card);
++	of_node_put(afe_np);
++	if (ret)
++		return dev_err_probe(dev, ret, "failed to register sound card\n");
++
++	dev_info(dev, "Douglas MT8163 + MT6323 sound card registered\n");
++	return 0;
++}
++
++static const struct of_device_id douglas_audio_of_match[] = {
++	{ .compatible = "amazon,mt8163-douglas-audio" },
++	{ }
++};
++MODULE_DEVICE_TABLE(of, douglas_audio_of_match);
++
++static struct platform_driver douglas_audio_driver = {
++	.probe = douglas_audio_probe,
++	.driver = {
++		.name = "mt8163-douglas-audio",
++		.of_match_table = douglas_audio_of_match,
++	},
++};
++module_platform_driver(douglas_audio_driver);
++
++MODULE_DESCRIPTION("Amazon Fire HD 8 (douglas) MT8163 + MT6323 audio driver");
++MODULE_LICENSE("GPL");
+-- 
+2.56.1
+

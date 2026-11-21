@@ -1,0 +1,10 @@
+/proc/clkdbg           /proc/mtk_cmdq         /proc/mtk_mira
+/proc/mtk_battery_cmd  /proc/mtk_cmdq_debug
+### clk rates
+axi_sel 136500000 parent=
+mem_sel 0 parent=
+ddrphycfg_sel 26000000 parent=
+mm_sel 364000000 parent=
+pmicspi_sel 26000000 parent=
+aud_intbus_sel 136500000 parent=
+audio_sel 26000000 parent=

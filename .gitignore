@@ -1,0 +1,26 @@
+# separate git repositories / third-party trees
+libreecho-kernel/
+wifi-consys/
+kbuild/
+tc/
+amonet-dir/
+brick-dir/
+# downloads (checksum files are kept)
+*.zip
+# secrets and local state
+device-password.txt
+amonet-in
+__pycache__/
+*.log
+# build products
+*.ko
+*.o
+*.mod
+*.mod.c
+*.cmd
+.*.cmd
+Module.symvers
+modules.order
+.tmp_versions/
+# audio captures
+*.wav

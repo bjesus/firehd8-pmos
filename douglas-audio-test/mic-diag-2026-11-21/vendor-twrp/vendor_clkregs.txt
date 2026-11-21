@@ -1,0 +1,233 @@
+SPM_VDE_PWR_CON      : [0xffffff800029c210] = 0x00001f12
+SPM_MFG_PWR_CON      : [0xffffff800029c214] = 0x003f3f12
+SPM_VEN_PWR_CON      : [0xffffff800029c230] = 0x0000ff12
+SPM_ISP_PWR_CON      : [0xffffff800029c238] = 0x00003f12
+SPM_DIS_PWR_CON      : [0xffffff800029c23c] = 0x0000000d
+SPM_VEN2_PWR_CON     : [0xffffff800029c298] = 0x00001f12
+SPM_CONN_PWR_CON     : [0xffffff800029c280] = 0x00000112
+SPM_AUDIO_PWR_CON    : [0xffffff800029c29c] = 0x0000000d
+SPM_MFG_2D_PWR_CON   : [0xffffff800029c2c0] = 0x00003f12
+SPM_MFG_ASYNC_PWR_CON: [0xffffff800029c2c4] = 0x00000f12
+SPM_USB_PWR_CON      : [0xffffff800029c2cc] = 0x0000000d
+SPM_PWR_STATUS       : [0xffffff800029c60c] = 0x034fe348
+SPM_PWR_STATUS_2ND   : [0xffffff800029c610] = 0x034fe348
+CLK26CALI_0          : [0xffffff800028c220] = 0x00000000
+CLK26CALI_1          : [0xffffff800028c224] = 0x03ff01ec
+CLK_CFG_0            : [0xffffff800028c040] = 0x01000101
+CLK_CFG_1            : [0xffffff800028c050] = 0x81008100
+CLK_CFG_2            : [0xffffff800028c060] = 0x00810080
+CLK_CFG_3            : [0xffffff800028c070] = 0x00828282
+CLK_CFG_4            : [0xffffff800028c080] = 0x01008280
+CLK_CFG_5            : [0xffffff800028c090] = 0x81810100
+CLK_CFG_6            : [0xffffff800028c0a0] = 0x81818181
+CLK_CFG_7            : [0xffffff800028c0b0] = 0x80848581
+CLK_CFG_8            : [0xffffff800028c0c0] = 0x01818080
+CLK_CFG_9            : [0xffffff800028c0d0] = 0x1d3f0001
+CLK_MISC_CFG_0       : [0xffffff800028c104] = 0xffff0001
+CLK_DBG_CFG          : [0xffffff800028c10c] = 0x00000000
+PLL_HP_CON0          : [0xffffff8000290f00] = 0x00000000
+ARMPLL_CON0          : [0xffffff8000290210] = 0xf1000100
+ARMPLL_CON1          : [0xffffff8000290214] = 0x800a0000
+ARMPLL_PWR_CON0      : [0xffffff800029021c] = 0x80000002
+MAINPLL_CON0         : [0xffffff8000290220] = 0xf1000101
+MAINPLL_CON1         : [0xffffff8000290224] = 0x000a8000
+MAINPLL_PWR_CON0     : [0xffffff800029022c] = 0x80000001
+UNIVPLL_CON0         : [0xffffff8000290230] = 0xff000111
+UNIVPLL_CON1         : [0xffffff8000290234] = 0x80180000
+UNIVPLL_PWR_CON0     : [0xffffff800029023c] = 0x80000001
+MMPLL_CON0           : [0xffffff8000290240] = 0x00000100
+MMPLL_CON1           : [0xffffff8000290244] = 0x020e9d89
+MMPLL_PWR_CON0       : [0xffffff800029024c] = 0x00000002
+MSDCPLL_CON0         : [0xffffff8000290250] = 0x00000120
+MSDCPLL_CON1         : [0xffffff8000290254] = 0x000f6276
+MSDCPLL_PWR_CON0     : [0xffffff800029025c] = 0x00000002
+VENCPLL_CON0         : [0xffffff8000290260] = 0x00000120
+VENCPLL_CON1         : [0xffffff8000290264] = 0x000e0000
+VENCPLL_PWR_CON0     : [0xffffff800029026c] = 0x00000002
+TVDPLL_CON0          : [0xffffff8000290270] = 0xc0000120
+TVDPLL_CON1          : [0xffffff8000290274] = 0x0016d89e
+TVDPLL_PWR_CON0      : [0xffffff800029027c] = 0x00000002
+MPLL_CON0            : [0xffffff8000290280] = 0x00010131
+MPLL_CON1            : [0xffffff8000290284] = 0x00100000
+MPLL_PWR_CON0        : [0xffffff800029028c] = 0x80000001
+AUD1PLL_CON0         : [0xffffff80002902a0] = 0x00000140
+AUD1PLL_CON1         : [0xffffff80002902a4] = 0x37945ea5
+AUD1PLL_PWR_CON0     : [0xffffff80002902ac] = 0x00000002
+AUD2PLL_CON0         : [0xffffff80002902b4] = 0x3c7ea932
+AUD2PLL_CON1         : [0xffffff80002902b8] = 0x3c7ea932
+AUD2PLL_PWR_CON0     : [0xffffff80002902b4] = 0x3c7ea932
+LVDSPLL_CON0         : [0xffffff80002902c0] = 0x00000130
+LVDSPLL_CON1         : [0xffffff80002902c4] = 0x000b89d8
+LVDSPLL_PWR_CON0     : [0xffffff80002902cc] = 0x00000002
+INFRA_TOPCKGEN_DCMCTL: [0xffffff800028e010] = 0x00000070
+INFRA_PDN_SET        : [0xffffff800028e040] = 0x00000000
+INFRA_PDN_CLR        : [0xffffff800028e044] = 0x00000000
+INFRA_PDN_STA        : [0xffffff800028e048] = 0x00000000
+AUDIO_TOP_CON0       : [0xffffff8000292000] = 0x81fd4038
+MMSYS_CG_CON0        : [0xffffff8000294100] = 0xffe063fc
+MMSYS_CG_SET0        : [0xffffff8000294104] = 0x00000000
+MMSYS_CG_CLR0        : [0xffffff8000294108] = 0x00000000
+MMSYS_CG_CON1        : [0xffffff8000294110] = 0xfffffff0
+MMSYS_CG_SET1        : [0xffffff8000294114] = 0x00000000
+MMSYS_CG_CLR1        : [0xffffff8000294118] = 0x00000000
+IMG_CG_CON           : [0xffffff8000296000] = 0x00000000
+IMG_CG_SET           : [0xffffff8000296004] = 0x00000000
+IMG_CG_CLR           : [0xffffff8000296008] = 0x00000000
+VDEC_CKEN_SET        : [0xffffff8000298000] = 0x00000000
+VDEC_CKEN_CLR        : [0xffffff8000298004] = 0x00000000
+LARB_CKEN_SET        : [0xffffff8000298008] = 0x00000000
+LARB_CKEN_CLR        : [0xffffff800029800c] = 0x00000000
+VENC_CG_CON          : [0xffffff800029a000] = 0x00000000
+VENC_CG_SET          : [0xffffff800029a004] = 0x00000000
+VENC_CG_CLR          : [0xffffff800029a008] = 0x00000000
+====STATE
+[clk_null         :  ON,   1,   2,          0,                  ]
+[clk26m           :  ON,   1,  12,   26000000,                  ]
+[clk32k           :  ON,   1,   1,      32000,                  ]
+[hdmitx_dig_cts   : off,   0,   0,          0,          clk_null]
+[armpll           : off,   0,   0, 1001000000,            clk26m]
+[mainpll          :  ON,   1,   2, 1092000000,            clk26m]
+[univpll          :  ON,   1,   1, 1248000000,            clk26m]
+[mmpll            : off,   0,   0,  379999665,            clk26m]
+[msdcpll          : off,   0,   0,  399999939,            clk26m]
+[vencpll          : off,   0,   0,  364000000,            clk26m]
+[tvdpll           : off,   0,   0,  594000184,            clk26m]
+[mpll             :  ON,   1,   1,  208000000,            clk26m]
+[aud1pll          : off,   0,   0,   90316800,            clk26m]
+[aud2pll          : off,   0,   0,   98304000,            clk26m]
+[lvdspll          : off,   0,   0,  149999878,            clk26m]
+[main_h546m       :  ON,   1,   1,  546000000,           mainpll]
+[main_h364m       :  ON,   1,   1,  364000000,           mainpll]
+[main_h218p4m     : off,   0,   0,  218400000,           mainpll]
+[main_h156m       : off,   0,   0,  156000000,           mainpll]
+[univ_624m        : off,   0,   0,  624000000,           univpll]
+[univ_416m        : off,   0,   0,  416000000,           univpll]
+[univ_249p6m      : off,   0,   0,  249600000,           univpll]
+[univ_178p3m      : off,   0,   0,  178285714,           univpll]
+[univ_48m         : off,   0,   0,   48000000,           univpll]
+[apll1_ck         : off,   0,   0,   90316800,           aud1pll]
+[apll2_ck         : off,   0,   0,   98304000,           aud2pll]
+[clkrtc_ext       :  ON,   1,   1,      32000,            clk32k]
+[clkrtc_int       : off,   0,   0,      32786,            clk26m]
+[dmpll_ck         :  ON,   1,   1,          0,          clk_null]
+[f26m_mem_ckgen   : off,   0,   0,          0,          clk_null]
+[hdmi_cts_ck      : off,   0,   0,          0,    hdmitx_dig_cts]
+[hdmi_cts_d2      : off,   0,   0,          0,    hdmitx_dig_cts]
+[hdmi_cts_d3      : off,   0,   0,          0,    hdmitx_dig_cts]
+[lvdspll_ck       : off,   0,   0,  149999878,           lvdspll]
+[lvdspll_d2       : off,   0,   0,   74999939,           lvdspll]
+[lvdspll_d4       : off,   0,   0,   37499969,           lvdspll]
+[lvdspll_d8       : off,   0,   0,   18749984,           lvdspll]
+[lvdspll_eth_ck   : off,   0,   0,   37499969,           lvdspll]
+[mmpll_ck         : off,   0,   0,  379999665,             mmpll]
+[mpll_208m_ck     :  ON,   1,   1,  208000000,              mpll]
+[msdcpll_ck       : off,   0,   0,  399999939,           msdcpll]
+[msdcpll_d2       : off,   0,   0,  199999969,           msdcpll]
+[msdcpll_d4       : off,   0,   0,   99999984,           msdcpll]
+[syspll_d2        : off,   0,   0,  546000000,        main_h546m]
+[syspll_d2p5      : off,   0,   0,  436800000,      main_h218p4m]
+[syspll_d3        :  ON,   1,   1,  364000000,        main_h364m]
+[syspll_d5        : off,   0,   0,  218400000,      main_h218p4m]
+[syspll_d7        : off,   0,   0,  156000000,        main_h156m]
+[syspll1_d2       : off,   0,   0,  273000000,        main_h546m]
+[syspll1_d4       :  ON,   1,   2,  136500000,        main_h546m]
+[syspll1_d8       : off,   0,   0,   68250000,        main_h546m]
+[syspll1_d16      : off,   0,   0,   34125000,        main_h546m]
+[syspll2_d2       : off,   0,   0,  182000000,        main_h364m]
+[syspll2_d4       : off,   0,   0,   91000000,        main_h364m]
+[syspll2_d8       : off,   0,   0,   45500000,        main_h364m]
+[syspll3_d2       : off,   0,   0,  109200000,      main_h218p4m]
+[syspll3_d4       : off,   0,   0,   54600000,      main_h218p4m]
+[syspll4_d2       : off,   0,   0,   78000000,        main_h156m]
+[syspll4_d4       : off,   0,   0,   39000000,        main_h156m]
+[tvdpll_d2        : off,   0,   0,  297000092,            tvdpll]
+[tvdpll_d4        : off,   0,   0,  148500046,            tvdpll]
+[tvdpll_d8        : off,   0,   0,   74250023,            tvdpll]
+[tvdpll_d16       : off,   0,   0,   37125011,            tvdpll]
+[univpll_d2       : off,   0,   0,  624000000,         univ_624m]
+[univpll_d2p5     : off,   0,   0,  499200000,       univ_249p6m]
+[univpll_d3       : off,   0,   0,  416000000,         univ_416m]
+[univpll_d5       : off,   0,   0,  249600000,       univ_249p6m]
+[univpll_d7       : off,   0,   0,  178285714,       univ_178p3m]
+[univpll_d26      : off,   0,   0,   48000000,          univ_48m]
+[univpll1_d2      : off,   0,   0,  312000000,         univ_624m]
+[univpll1_d4      : off,   0,   0,  156000000,         univ_624m]
+[univpll2_d2      : off,   0,   0,  208000000,         univ_416m]
+[univpll2_d4      : off,   0,   0,  104000000,         univ_416m]
+[univpll2_d8      : off,   0,   0,   52000000,         univ_416m]
+[univpll3_d2      : off,   0,   0,  124800000,       univ_249p6m]
+[univpll3_d4      : off,   0,   0,   62400000,       univ_249p6m]
+[univpll3_d8      : off,   0,   0,   31200000,       univ_249p6m]
+[vencpll_ck       : off,   0,   0,  364000000,           vencpll]
+[axi_sel          :  ON,   1,  11,  136500000,        syspll1_d4]
+[mem_sel          :  ON,   1,   1,          0,          dmpll_ck]
+[ddrphycfg_sel    :  ON,   1,   1,   26000000,            clk26m]
+[mm_sel           :  ON,   1,  14,  364000000,         syspll_d3]
+[pwm_sel          :  ON,   1,   1,   26000000,            clk26m]
+[vdec_sel         : off,   0,   0,  364000000,         syspll_d3]
+[mfg_sel          : off,   0,   0,  379999665,          mmpll_ck]
+[camtg_sel        : off,   0,   0,   26000000,            clk26m]
+[uart_sel         :  ON,   1,   1,   26000000,            clk26m]
+[spi_sel          : off,   0,   0,  109200000,        syspll3_d2]
+[msdc30_0_sel     : off,   0,   0,  199999969,        msdcpll_d2]
+[msdc30_1_sel     : off,   0,   0,  199999969,        msdcpll_d2]
+[msdc30_2_sel     : off,   0,   0,  199999969,        msdcpll_d2]
+[msdc50_3_hsel    : off,   0,   0,   26000000,            clk26m]
+[msdc50_3_sel     : off,   0,   0,  199999969,        msdcpll_d2]
+[audio_sel        :  ON,   1,   1,   26000000,            clk26m]
+[aud_intbus_sel   :  ON,   1,   1,  136500000,        syspll1_d4]
+[pmicspi_sel      :  ON,   1,   1,   26000000,            clk26m]
+[scp_sel          :  ON,   1,   1,  208000000,      mpll_208m_ck]
+[atb_sel          : off,   0,   0,  273000000,        syspll1_d2]
+[mjc_sel          : off,   0,   0,  218400000,         syspll_d5]
+[dpi0_sel         : off,   0,   0,  149999878,        lvdspll_ck]
+[scam_sel         : off,   0,   0,  109200000,        syspll3_d2]
+[aud_1_sel        : off,   0,   0,   90316800,          apll1_ck]
+[aud_2_sel        : off,   0,   0,   98304000,          apll2_ck]
+[dpi1_sel         : off,   0,   0,  297000092,         tvdpll_d2]
+[ufoenc_sel       : off,   0,   0,  416000000,        univpll_d3]
+[ufodec_sel       : off,   0,   0,  416000000,        univpll_d3]
+[eth_sel          : off,   0,   0,   26000000,            clk26m]
+[onfi_sel         : off,   0,   0,   26000000,            clk26m]
+[snfi_sel         : off,   0,   0,   26000000,            clk26m]
+[hdmi_sel         : off,   0,   0,          0,       hdmi_cts_ck]
+[rtc_sel          :  ON,   1,   1,      32000,        clkrtc_ext]
+[infra_pmic_tmr   : off,   0,   0,   26000000,            clk26m]
+[infra_pmic_ap    :  ON,   1,   1,   26000000,            clk26m]
+[infra_pmic_md    : off,   0,   0,   26000000,            clk26m]
+[infra_pmic_conn  : off,   0,   0,   26000000,            clk26m]
+[infra_scpsys     :  ON,   1,   1,  208000000,           scp_sel]
+[infra_sej        :  ON,   1,   1,  136500000,           axi_sel]
+[infra_apxgpt     :  ON,   1,   1,  136500000,           axi_sel]
+[infra_usb        :  ON,   1,   1,  136500000,           axi_sel]
+[infra_icusb      :  ON,   1,   0,  136500000,           axi_sel]
+[infra_gce        :  ON,   1,   1,  136500000,           axi_sel]
+[infra_therm      :  ON,   1,   2,  136500000,           axi_sel]
+[infra_i2c0       : off,   0,   0,  136500000,           axi_sel]
+[infra_i2c1       : off,   0,   0,  136500000,           axi_sel]
+[infra_i2c2       : off,   0,   0,  136500000,           axi_sel]
+[infra_pwm_hclk   : off,   0,   0,  136500000,           axi_sel]
+[infra_pwm1       : off,   0,   0,  136500000,           axi_sel]
+[infra_pwm2       : off,   0,   0,  136500000,           axi_sel]
+[infra_pwm3       : off,   0,   0,  136500000,           axi_sel]
+[infra_pwm        : off,   0,   0,  136500000,           axi_sel]
+[infra_uart0      :  ON,   1,   1,   26000000,          uart_sel]
+[infra_uart1      : off,   0,   0,   26000000,          uart_sel]
+[infra_uart2      : off,   0,   0,   26000000,          uart_sel]
+[infra_uart3      : off,   0,   0,   26000000,          uart_sel]
+[infra_usb_mcu    :  ON,   1,   1,  136500000,           axi_sel]
+[infra_nfi_ecc66  : off,   0,   0,  136500000,           axi_sel]
+[infra_nfi_66m    : off,   0,   0,  136500000,           axi_sel]
+[infra_btif       :  ON,   1,   0,  136500000,           axi_sel]
+[infra_spi        : off,   0,   0,  109200000,           spi_sel]
+[infra_msdc3      : off,   0,   0,  199999969,      msdc50_3_sel]
+[infra_msdc1      : off,   0,   0,  199999969,      msdc30_1_sel]
+[infra_msdc2      : off,   0,   0,  199999969,      msdc30_2_sel]
+[infra_msdc0      : off,   0,   0,  199999969,      msdc30_0_sel]
+[infra_gcpu       :  ON,   1,   1,  136500000,           axi_sel]
+[infra_auxadc     :  ON,   1,   2,   26000000,            clk26m]
+[infra_cpum       : off,   0,   0,  136500000,           axi_sel]
+[infra_irrx       : off,   0,   0,      32000,           rtc_sel]
+[infra_ufo        : off,   0,   0,  136500000,           axi_sel]
+[infra_cec        : off,   0,   0,      32000,           rtc_sel]
+[infra_cec_26m    : off,   0,   0,   26000000,            clk26m]

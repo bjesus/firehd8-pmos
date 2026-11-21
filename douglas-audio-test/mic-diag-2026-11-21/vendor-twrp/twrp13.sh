@@ -1,0 +1,2 @@
+ADB=/nix/store/qalfgcmwsd2mmj652qk6ysajv20h2yzg-android-tools-35.0.2/bin/adb
+$ADB shell 'mount -t debugfs none /sys/kernel/debug 2>/dev/null; G=/sys/kernel/debug/m4u; ls $G; for f in port register monitor; do echo "##### $f"; cat $G/$f 2>&1 | head -200; done; echo "##### smi"; ls -la /sys/kernel/debug/smi 2>&1; cat /sys/kernel/debug/smi/* 2>&1 | head -60' > /root/douglas-flash/vendor_m4u.txt 2>&1; wc -l /root/douglas-flash/vendor_m4u.txt

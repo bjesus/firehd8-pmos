@@ -1,0 +1,6 @@
+GPIOs 357-511, platform/1000b000.pinctrl, 1000b000.pinctrl:
+ gpio-383 (accdet-gpio         ) in  lo IRQ
+ gpio-391 (sym827_vsel         ) out hi    
+ gpio-392 (GTP INT IRQ         ) in  hi IRQ
+ gpio-403 (GTP RST PORT        ) out lo    
+ gpio-406 (cd                  ) in  hi IRQ

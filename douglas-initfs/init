@@ -1,0 +1,33 @@
+#!/bin/sh
+/bin/busybox mkdir -p /proc /sys /dev /tmp /mnt/root
+/bin/busybox mount -t proc none /proc 2>/dev/null
+/bin/busybox mount -t sysfs none /sys 2>/dev/null
+/bin/busybox mount -t devtmpfs none /dev 2>/dev/null
+
+exec >/dev/kmsg 2>&1
+echo "=== DOUGLAS 6.1 INITRAMFS: waiting for /dev/mmcblk0p16 ==="
+
+i=0
+while [ $i -lt 20 ]; do
+  [ -b /dev/mmcblk0p16 ] && break
+  /bin/busybox usleep 500000
+  i=$((i + 1))
+done
+
+if [ -b /dev/mmcblk0p16 ]; then
+  if /bin/busybox mount -t ext4 -o rw,noatime /dev/mmcblk0p16 /mnt/root 2>&1; then
+    if [ -x /mnt/root/sbin/douglas-init ]; then
+      echo "=== SWITCHING ROOT TO ALPINE LINUX ON /dev/mmcblk0p16 ==="
+      /bin/busybox umount /proc /sys /dev 2>/dev/null
+      exec /bin/busybox switch_root /mnt/root /sbin/douglas-init
+    fi
+  fi
+fi
+
+echo "=== FALLBACK: rootfs mount failed, arming TWRP BCB ==="
+if [ -b /dev/mmcblk0p12 ]; then
+  /bin/busybox printf 'boot-recovery\0\0\0' | /bin/busybox dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync 2>&1
+  /bin/busybox sync
+  /bin/busybox reboot -f
+fi
+/bin/busybox sleep 1000000

@@ -1,0 +1,83 @@
+           CPU0       
+  1:          0       GIC  29  arch_timer
+  2:      96035       GIC  30  arch_timer
+  5:          0  MT_SYSIRQ 152  mtk-gpt
+  6:          0  MT_SYSIRQ  64  mtk_cpuxgpt0
+  7:          0  MT_SYSIRQ  65  mtk_cpuxgpt1
+  8:          0  MT_SYSIRQ  66  mtk_cpuxgpt2
+  9:          0  MT_SYSIRQ  67  mtk_cpuxgpt3
+ 10:          1  MT_SYSIRQ  91
+ 16:          0  MT_SYSIRQ 163  SPM
+ 17:          0  MT_SYSIRQ 164  SPM
+ 18:          0  MT_SYSIRQ 165  SPM
+ 19:          0  MT_SYSIRQ 166  SPM
+ 20:          0  MT_SYSIRQ 167  SPM
+ 21:          0  MT_SYSIRQ 168  SPM
+ 22:          0  MT_SYSIRQ 169  SPM
+ 23:          0  MT_SYSIRQ 170  SPM
+ 24:          0  MT_SYSIRQ 240  CIRQ
+ 25:          0  MT_SYSIRQ 128  mtk-wdt
+ 29:          0  MT_SYSIRQ 161  pmic_wrap
+ 30:          0  MT_SYSIRQ 162  mtk-kpd
+ 31:          0  MT_SYSIRQ 174  10020000.md32
+ 32:          1  MT_SYSIRQ 133  TEE IRQ, mt_emi_mpu
+ 33:          0  MT_SYSIRQ 147  m4u
+ 35:      28011  MT_SYSIRQ 143  mtk_cmdq
+ 36:          0  MT_SYSIRQ 144  TEE IRQ
+ 37:          0  MT_SYSIRQ 145  m4u
+ 45:        149  MT_SYSIRQ  84  i2c-mt65xx
+ 46:        549  MT_SYSIRQ  85  i2c-mt65xx
+ 47:       5576  MT_SYSIRQ  86  i2c-mt65xx
+ 48:          0  MT_SYSIRQ  78  mt8163-thermal
+ 49:          3  MT_SYSIRQ 125  ptp
+ 51:      10548  MT_SYSIRQ  72  musb-hdrc.0.auto
+ 52:       1260  MT_SYSIRQ 142  Afe_ISR_Handle
+ 53:          0  MT_SYSIRQ 227  13040000.gpu
+ 54:          0  MT_SYSIRQ 226  13040000.gpu
+ 55:          1  MT_SYSIRQ 225  13040000.gpu
+ 56:       7928  MT_SYSIRQ  79  11230000.mmc
+ 57:          0  MT_SYSIRQ  80  11240000.mmc
+ 64:      28039  MT_SYSIRQ 184  DISPSYS
+ 65:      28010  MT_SYSIRQ 185  DISPSYS
+ 66:      84112  MT_SYSIRQ 186  DISPSYS
+ 67:          0  MT_SYSIRQ 187  DISPSYS
+ 71:         28  MT_SYSIRQ 191  DISPSYS
+ 74:          0  MT_SYSIRQ 195  DISPSYS
+ 77:          0  MT_SYSIRQ 177  DISPSYS
+ 82:          0  MT_SYSIRQ 219  ISP
+ 89:          0  MT_SYSIRQ 236  BTCVSD_ISR_Handle
+ 92:          0  MT_SYSIRQ   4  TEE IRQ
+ 94:          0  mtk-eint   1  ops_bq24297_int_handler
+ 97:          0  mtk-eint   4  accdet-eint
+110:          0  mtk-eint  17  11240000.mmc cd
+112:          0  mtk-eint  19  hall_sensor_1
+117:          1  mtk-eint  24  mt6323-irqchip
+139:         11  mtk-eint  46  gt9xx
+142:          0  mtk-eint  49  USB_IDDIG
+262:          0  mt6323-irqchip   0  mt6323_spkl_ab
+263:          0  mt6323-irqchip   1  mt6323_spkl_d
+264:          0  mt6323-irqchip   2  mt6323_bat_l
+265:          0  mt6323-irqchip   3  mt6323_bat_h
+266:          1  mt6323-irqchip   4  mt6323_watchdog
+267:          0  mt6323-irqchip   5  mt6323_pwrkey
+268:          0  mt6323-irqchip   6  mt6323_thr_l
+269:          0  mt6323-irqchip   7  mt6323_thr_h
+270:          0  mt6323-irqchip   8  mt6323_vbaton_undet
+271:          0  mt6323-irqchip   9  mt6323_bvalid_det
+272:          0  mt6323-irqchip  10  mt6323_chrdet
+273:          0  mt6323-irqchip  11  mt6323_ov
+274:          0  mt6323-irqchip  16  mt6323_ldo
+275:          0  mt6323-irqchip  17  mt6323_fchrkey
+276:          0  mt6323-irqchip  18  mt6323_accdet
+277:          0  mt6323-irqchip  19  mt6323_audio
+278:          0  mt6323-irqchip  20  mt6323_rtc
+279:          0  mt6323-irqchip  21  mt6323_vproc
+280:          0  mt6323-irqchip  22  mt6323_vsys
+281:          0  mt6323-irqchip  23  mt6323_vpa
+IPI0:      2852       Rescheduling interrupts
+IPI1:         5       Function call interrupts
+IPI2:         1       Single function call interrupts
+IPI3:         0       CPU stop interrupts
+IPI4:         0       Timer broadcast interrupts
+IPI5:         1       IRQ work interrupts
+Err:          0

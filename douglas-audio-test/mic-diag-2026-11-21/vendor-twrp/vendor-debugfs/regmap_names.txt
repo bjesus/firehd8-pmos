@@ -1,0 +1,4 @@
+### /sys/kernel/debug/regmap/1-0060
+sym827-regulator
+### /sys/kernel/debug/regmap/1000d000.pwrap
+mediatek,mt8163-pwrap

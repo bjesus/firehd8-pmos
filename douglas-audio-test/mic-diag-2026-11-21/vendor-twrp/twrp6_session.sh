@@ -1,0 +1,2 @@
+ADB=/nix/store/qalfgcmwsd2mmj652qk6ysajv20h2yzg-android-tools-35.0.2/bin/adb
+$ADB shell 'G=/sys/kernel/debug; for f in m4u/port m4u/register m4u/monitor smi/*; do echo "### $f"; head -c 6000 $G/$f 2>&1 | head -80; done; echo "### cmdline"; cat /proc/cmdline; echo "### clk_summary header"; head -3 $G/clk/clk_summary; echo "### all enabled clocks"; awk "\$2>0 {print \$1}" $G/clk/clk_summary | tr "\n" " "' 2>&1

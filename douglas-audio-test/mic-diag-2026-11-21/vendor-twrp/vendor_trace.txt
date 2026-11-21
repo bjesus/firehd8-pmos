@@ -1,0 +1,440 @@
+<7>[  547.945502] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.945544] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x0e4
+<7>[  547.945544] <0> pointer = ffffffc052adbd38
+<7>[  547.945557] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.945565] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.945572] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.945580] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x0e4
+<7>[  547.945580] <0>
+<7>[  547.945591] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.945599] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.945608] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.945619] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x228 regvalue = 0x83886080
+<7>[  547.945681] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.945708] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x250
+<7>[  547.945708] <0> pointer = ffffffc052adbd38
+<7>[  547.945720] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.945727] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.945735] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.945743] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x250
+<7>[  547.945743] <0>
+<7>[  547.945754] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.945761] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.945769] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.945778] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x592 regvalue = 0x537923604
+<7>[  547.945828] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.945854] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x280
+<7>[  547.945854] <0> pointer = ffffffc052adbd38
+<7>[  547.945865] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.945873] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.945881] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.945889] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x280
+<7>[  547.945889] <0>
+<7>[  547.945899] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.945907] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.945914] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.945924] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x640 regvalue = 0x4096
+<7>[  547.945972] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.945998] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x284
+<7>[  547.945998] <0> pointer = ffffffc052adbd38
+<7>[  547.946010] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.946017] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.946025] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.946033] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x284
+<7>[  547.946033] <0>
+<7>[  547.946043] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.946051] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.946058] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.946068] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x644 regvalue = 0x8192
+<7>[  547.946118] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.946145] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x288
+<7>[  547.946145] <0> pointer = ffffffc052adbd38
+<7>[  547.946156] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.946163] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.946171] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.946179] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x288
+<7>[  547.946179] <0>
+<7>[  547.946189] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.946197] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.946205] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.946214] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x648 regvalue = 0x8192
+<7>[  547.946266] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.946292] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x2a4
+<7>[  547.946292] <0> pointer = ffffffc052adbd38
+<7>[  547.946303] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.946311] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.946319] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.946326] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x2a4
+<7>[  547.946326] <0>
+<7>[  547.946337] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.946344] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.946352] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.946361] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x676 regvalue = 0x4915268
+<7>[  547.946411] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.946436] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x320
+<7>[  547.946436] <0> pointer = ffffffc052adbd38
+<7>[  547.946448] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.946455] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.946463] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.946471] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x320
+<7>[  547.946471] <0>
+<7>[  547.946481] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.946488] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.946496] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.946506] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x800 regvalue = 0x1904
+<7>[  547.946554] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.946580] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x338
+<7>[  547.946580] <0> pointer = ffffffc052adbd38
+<7>[  547.946591] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.946599] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.946607] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.946614] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x338
+<7>[  547.946614] <0>
+<7>[  547.946625] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.946632] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.946640] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.946649] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x824 regvalue = 0x7
+<7>[  547.946697] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.946723] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x37c
+<7>[  547.946723] <0> pointer = ffffffc052adbd38
+<7>[  547.946734] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.946742] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.946750] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.946757] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x37c
+<7>[  547.946757] <0>
+<7>[  547.946768] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.946776] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.946783] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.946792] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x892 regvalue = 0x7
+<7>[  547.946841] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.946867] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x3d0
+<7>[  547.946867] <0> pointer = ffffffc052adbd38
+<7>[  547.946878] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.946886] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.946893] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.946901] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x3d0
+<7>[  547.946901] <0>
+<7>[  547.946911] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.946919] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.946926] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.946936] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x976 regvalue = 0x858993459
+<7>[  547.946984] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.947009] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x3ec
+<7>[  547.947009] <0> pointer = ffffffc052adbd38
+<7>[  547.947021] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.947029] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.947036] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.947044] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x3ec
+<7>[  547.947044] <0>
+<7>[  547.947054] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.947062] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.947069] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.947078] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x1004 regvalue = 0x3
+<7>[  547.947128] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.947154] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x480
+<7>[  547.947154] <0> pointer = ffffffc052adbd38
+<7>[  547.947165] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.947173] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.947181] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.947188] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x480
+<7>[  547.947188] <0>
+<7>[  547.947199] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.947206] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.947214] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.947224] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x1152 regvalue = 0x26214400
+<7>[  547.947273] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.947299] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x4b0
+<7>[  547.947299] <0> pointer = ffffffc052adbd38
+<7>[  547.947310] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.947318] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.947326] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.947333] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x4b0
+<7>[  547.947333] <0>
+<7>[  547.947343] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.947351] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.947358] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.947368] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x1200 regvalue = 0x26214400
+<7>[  547.947416] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.947442] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x4f0
+<7>[  547.947442] <0> pointer = ffffffc052adbd38
+<7>[  547.947453] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.947461] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.947469] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.947476] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x4f0
+<7>[  547.947476] <0>
+<7>[  547.947487] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.947494] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.947502] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.947511] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x1264 regvalue = 0x1521112490
+<7>[  547.947560] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.947586] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x500
+<7>[  547.947586] <0> pointer = ffffffc052adbd38
+<7>[  547.947598] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.947606] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.947613] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.947621] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x500
+<7>[  547.947621] <0>
+<7>[  547.947631] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.947639] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.947646] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.947656] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x1280 regvalue = 0x2148007936
+<7>[  547.947705] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.947731] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x540
+<7>[  547.947731] <0> pointer = ffffffc052adbd38
+<7>[  547.947742] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.947750] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.947757] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.947765] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x540
+<7>[  547.947765] <0>
+<7>[  547.947775] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.947783] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.947790] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.947800] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x1344 regvalue = 0x88080433
+<7>[  547.947848] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.947874] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x00c
+<7>[  547.947874] <0> pointer = ffffffc052adbd38
+<7>[  547.947885] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.947893] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.947900] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.947908] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x00c
+<7>[  547.947908] <0>
+<7>[  547.947918] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.947926] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.947933] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.947943] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x12 regvalue = 0x1610612740
+<7>[  547.947991] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.948017] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x130
+<7>[  547.948017] <0> pointer = ffffffc052adbd38
+<7>[  547.948028] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.948036] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.948044] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.948052] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x130
+<7>[  547.948052] <0>
+<7>[  547.948062] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.948069] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.948077] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.948086] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x304 regvalue = 0x0
+<7>[  547.948134] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.948160] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 21 temp = Getafereg addr 0x134
+<7>[  547.948160] <0> pointer = ffffffc052adbd38
+<7>[  547.948171] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.948179] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getafereg
+<7>[  547.948187] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.948195] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x134
+<7>[  547.948195] <0>
+<7>[  547.948205] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.948212] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.948220] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAfe)
+<7>[  547.948229] <0> (0)[647:sh][name:mt_soc_machine&]Getafereg regaddr = 0x308 regvalue = 0x0
+<7>[  547.948290] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.948316] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x4018
+<7>[  547.948316] <0> pointer = ffffffc052adbd38
+<7>[  547.948327] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.948334] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.948342] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.948350] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x4018
+<7>[  547.948350] <0>
+<7>[  547.948360] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.948368] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.948375] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.948389] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x16408 regvalue = 0x16
+<7>[  547.948436] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.948462] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x401e
+<7>[  547.948462] <0> pointer = ffffffc052adbd38
+<7>[  547.948474] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.948482] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.948489] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.948497] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x401e
+<7>[  547.948497] <0>
+<7>[  547.948507] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.948515] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.948522] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.948534] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x16414 regvalue = 0x1
+<7>[  547.948582] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.948608] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x0102
+<7>[  547.948608] <0> pointer = ffffffc052adbd38
+<7>[  547.948619] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.948627] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.948634] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.948642] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x0102
+<7>[  547.948642] <0>
+<7>[  547.948652] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.948660] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.948668] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.948680] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x258 regvalue = 0x32835
+<7>[  547.948727] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.948752] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x0108
+<7>[  547.948752] <0> pointer = ffffffc052adbd38
+<7>[  547.948764] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.948771] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.948779] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.948787] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x0108
+<7>[  547.948787] <0>
+<7>[  547.948797] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.948804] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.948812] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.948824] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x264 regvalue = 0x5119
+<7>[  547.948872] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.948898] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x010e
+<7>[  547.948898] <0> pointer = ffffffc052adbd38
+<7>[  547.948909] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.948917] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.948924] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.948932] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x010e
+<7>[  547.948932] <0>
+<7>[  547.948942] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.948950] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.948957] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.948969] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x270 regvalue = 0x47
+<7>[  547.949017] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.949043] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x0126
+<7>[  547.949043] <0> pointer = ffffffc052adbd38
+<7>[  547.949055] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.949063] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.949070] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.949078] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x0126
+<7>[  547.949078] <0>
+<7>[  547.949089] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.949096] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.949104] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.949116] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x294 regvalue = 0x192
+<7>[  547.949163] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.949188] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x0700
+<7>[  547.949188] <0> pointer = ffffffc052adbd38
+<7>[  547.949199] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.949207] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.949215] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.949223] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x0700
+<7>[  547.949223] <0>
+<7>[  547.949233] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.949240] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.949248] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.949260] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x1792 regvalue = 0x24627
+<7>[  547.949307] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.949333] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x0702
+<7>[  547.949333] <0> pointer = ffffffc052adbd38
+<7>[  547.949344] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.949352] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.949359] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.949367] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x0702
+<7>[  547.949367] <0>
+<7>[  547.949377] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.949385] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.949392] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.949404] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x1794 regvalue = 0x800
+<7>[  547.949452] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.949477] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x0704
+<7>[  547.949477] <0> pointer = ffffffc052adbd38
+<7>[  547.949489] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.949497] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.949504] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.949512] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x0704
+<7>[  547.949512] <0>
+<7>[  547.949522] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.949530] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.949538] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.949550] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x1796 regvalue = 0x192
+<7>[  547.949597] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.949623] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x0710
+<7>[  547.949623] <0> pointer = ffffffc052adbd38
+<7>[  547.949635] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.949642] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.949650] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.949658] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x0710
+<7>[  547.949658] <0>
+<7>[  547.949668] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.949676] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.949683] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.949696] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x1808 regvalue = 0x512
+<7>[  547.949743] <0> (0)[647:sh][name:mt_soc_machine&]mt_soc_debug_open
+<7>[  547.949769] <0> (0)[647:sh][name:mt_soc_machine&]copy_from_user mt_soc_debug_write count = 22 temp = Getanareg addr 0x0712
+<7>[  547.949769] <0> pointer = ffffffc052adbd38
+<7>[  547.949780] <0> (0)[647:sh][name:mt_soc_machine&]token1
+<7>[  547.949788] <0> (0)[647:sh][name:mt_soc_machine&]token1 = Getanareg
+<7>[  547.949795] <0> (0)[647:sh][name:mt_soc_machine&]token2 = addr
+<7>[  547.949803] <0> (0)[647:sh][name:mt_soc_machine&]token3 = 0x0712
+<7>[  547.949803] <0>
+<7>[  547.949813] <0> (0)[647:sh][name:mt_soc_machine&]token4 = (null)
+<7>[  547.949821] <0> (0)[647:sh][name:mt_soc_machine&]token5 = (null)
+<7>[  547.949828] <0> (0)[647:sh][name:mt_soc_machine&]strcmp (token1,PareGetkeyAna)
+<7>[  547.949840] <0> (0)[647:sh][name:mt_soc_machine&]Getanareg regaddr = 0x1810 regvalue = 0x8
+<7>[  547.955758] <0> (0)[651:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_MicSource1_Get = 0
+<7>[  547.955795] <0> (0)[651:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_MicSource1_Set()
+<7>[  547.955805] <0> (0)[651:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_MicSource1_Set() index = 0 done
+<7>[  547.956421] <0> (0)[651:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_MicSource1_Get = 0
+<7>[  547.962437] <0> (1)[652:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_Mic1_Mode_Select_Get() mAudio_Analog_Mic1_mode = 0
+<7>[  547.962477] <0> (1)[652:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_Mic1_Mode_Select_Set()
+<7>[  547.962487] <0> (1)[652:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_Mic1_Mode_Select_Set() mAudio_Analog_Mic1_mode = 0
+<7>[  547.963100] <0> (1)[652:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_Mic1_Mode_Select_Get() mAudio_Analog_Mic1_mode = 0
+<7>[  547.969239] <0> (0)[653:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_PreAmp1_Get() mCodec_data->mAudio_Ana_Mux[AUDIO_ANALOG_MUX_IN_PREAMP_1] = 1
+<7>[  547.969276] <0> (0)[653:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_PreAmp1_Set()
+<7>[  547.969286] <0> (0)[653:ld-musl-aarch64][name:mt_soc_codec_63xx&]AudioPreAmp1_Sel Mul_Sel = 1
+<7>[  547.969295] <0> (0)[653:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_PreAmp1_Set() done
+<7>[  547.969907] <0> (0)[653:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_PreAmp1_Get() mCodec_data->mAudio_Ana_Mux[AUDIO_ANALOG_MUX_IN_PREAMP_1] = 1
+<7>[  547.976070] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_ADC1_Get = 0
+<7>[  547.976104] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_ADC1_Set()
+<7>[  547.976116] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]TurnOnADcPowerACC ADCType=14, enable=1, AdcStatus=0, DLStatus=0
+<7>[  547.976126] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]Topck_Enable enable = 1 TopCkCount = 0
+<4>[  547.976145] <0> (1)[654:ld-musl-aarch64][name:AudDrv_Ana&]Ana_Set_Reg offset= 0x10c, value = 0x100 mask = 0x100 ret = 0 Reg_Value = 0x0
+<7>[  547.976168] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]GetULNewIFFrequency with frequency = 48000
+<7>[  547.976176] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]GetULNewIFFrequency Reg_value = 3
+<7>[  547.976195] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]GetULFrequency frequency =48000
+<7>[  547.976227] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]SetMicPGAGain(), mic1 index = 3, index2 = 5
+<7>[  547.976243] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]SetMicPGAGain(), mic2 index = 3, index2 = 5
+<7>[  547.976911] <0> (1)[654:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_ADC1_Get = 1
+<7>[  547.983640] <0> (1)[655:ld-musl-aarch64][name:AudDrv_Clk&]+AudDrv_ADC_Clk_On, Aud_ADC_Clk_cntr:0
+<7>[  547.983654] <0> (1)[655:ld-musl-aarch64][name:AudDrv_Clk&]+AudDrv_ADC_Clk_On enable_clock ADC clk(0)
+<7>[  547.983664] <0> (1)[655:ld-musl-aarch64][name:AudDrv_Clk&]-AudDrv_ADC_Clk_On, Aud_ADC_Clk_cntr:1
+<7>[  547.983673] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_open use sram
+<7>[  547.983682] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetSramState state= 8
+<7>[  547.983694] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_open change to root! (pid 614 -> 655)
+<7>[  547.983703] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_open return
+<7>[  547.983980] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_hw_params
+<7>[  547.983991] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_hw_params mCaptureUseSram dma_bytes = 18432
+<6>[  547.983999] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]SetVULBuffer
+<6>[  547.984020] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]u4BufferSize = 18432 pucVirtBufAddr = ffffff8000780000 pucPhysBufAddr = 0x11221000
+<6>[  547.984037] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]dma_bytes = 18432 dma_area = ffffff8000780000 dma_addr = 0x11221000
+<7>[  547.984086] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_prepare
+<7>[  547.984097] <0> (1)[655:ld-musl-aarch64][name:mt_soc_codec_63xx&]mt63xx_codec_prepare set up SNDRV_PCM_STREAM_CAPTURE rate = 48000
+<7>[  547.984593] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_trigger cmd = 1
+<7>[  547.984603] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_alsa_start
+<7>[  547.984613] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]+SetMemifSubStream MemBlock = 2 substream = ffffffc003458800
+<4>[  547.984621] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetMemifSubStream head == NULL
+<7>[  547.984638] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]-SetMemifSubStream MemBlock = 2
+<7>[  547.984646] <0> (1)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]StartAudioCaptureHardware
+<7>[  547.984662] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetMemoryPathEnable Aud_block = 14 bEnable = 1
+<4>[  547.984671] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetMemoryPathEnable Aud_block = 14 mUserCount = 1 mState = 1
+<7>[  547.984691] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&] SetIrqMcuCounter Irqmode = 1 Counter = 1152
+<7>[  547.984700] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]not to add counter latency CurrentCount = 1152 Counter = 1152
+<4>[  547.984709] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]+SetIrqEnable(), Irqmode = 1, bEnable = 1
+<7>[  547.984725] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetMemoryPathEnable Aud_block = 2 bEnable = 1
+<4>[  547.984734] <0> (1)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetMemoryPathEnable Aud_block = 2 mUserCount = 1 mState = 1
+<4>[  548.834139] <0> (0)[76:kworker/0:1][name:mtk_wcn_stub_alps&][cmb_stub] thermal_ctrl_cb null
+<5>[  549.184798] <0> (0)[69:hps_main][name:smp&]CPU1: shutdown
+<4>[  549.834133] <0> (0)[76:kworker/0:1][name:mtk_wcn_stub_alps&][cmb_stub] thermal_ctrl_cb null
+<7>[  550.001231] <0> (0)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_trigger cmd = 0
+<7>[  550.001241] <0> (0)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_alsa_stop
+<7>[  550.001249] <0> (0)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]StopAudioCaptureHardware
+<7>[  550.001258] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetMemoryPathEnable Aud_block = 14 bEnable = 0
+<4>[  550.001268] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetMemoryPathEnable Aud_block = 14 mUserCount = 0 mState = 0
+<7>[  550.001286] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetMemoryPathEnable Aud_block = 2 bEnable = 0
+<4>[  550.001295] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]SetMemoryPathEnable Aud_block = 2 mUserCount = 0 mState = 0
+<4>[  550.001309] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]+SetIrqEnable(), Irqmode = 1, bEnable = 0
+<7>[  550.001350] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]+ RemoveMemifSubStream MemBlock = 2 substream = ffffffc003458800
+<4>[  550.001359] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]ClearMemBlock MemBlock = 2
+<4>[  550.006504] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]ClearMemBlock MemBlock 2 reset done
+<7>[  550.006517] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]- RemoveMemifSubStream MemBlock = 2
+<7>[  550.006578] <0> (0)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_hw_free
+<7>[  550.006599] <0> (0)[655:ld-musl-aarch64][name:mt_soc_pcm_capture&]mtk_capture_pcm_hw_free
+<7>[  550.006610] <0> (0)[655:ld-musl-aarch64][name:mt_soc_afe_control&]ClearSramState state= 8
+<7>[  550.006619] <0> (0)[655:ld-musl-aarch64][name:AudDrv_Clk&]+AudDrv_ADC_Clk_Off, Aud_ADC_Clk_cntr:1
+<7>[  550.006627] <0> (0)[655:ld-musl-aarch64][name:AudDrv_Clk&]+AudDrv_ADC_Clk_On disable_clock ADC clk(0)
+<7>[  550.006636] <0> (0)[655:ld-musl-aarch64][name:AudDrv_Clk&]-AudDrv_ADC_Clk_Off, Aud_ADC_Clk_cntr:0
+<7>[  550.014546] <0> (0)[657:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_ADC1_Get = 1
+<7>[  550.014580] <0> (0)[657:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_ADC1_Set()
+<7>[  550.014592] <0> (0)[657:ld-musl-aarch64][name:mt_soc_codec_63xx&]TurnOnADcPowerACC ADCType=14, enable=0, AdcStatus=0, DLStatus=0
+<7>[  550.014674] <0> (0)[657:ld-musl-aarch64][name:mt_soc_codec_63xx&]Topck_Enable enable = 0 TopCkCount = 1
+<4>[  550.014691] <0> (0)[657:ld-musl-aarch64][name:AudDrv_Ana&]Ana_Set_Reg offset= 0x10a, value = 0x100 mask = 0x100 ret = 0 Reg_Value = 0x0
+<4>[  550.014711] <0> (0)[657:ld-musl-aarch64][name:mt_soc_codec_63xx&]TopCkCount <0 =0
+<4>[  550.014711] <0> 
+<7>[  550.015326] <0> (0)[657:ld-musl-aarch64][name:mt_soc_codec_63xx&]Audio_ADC1_Get = 0

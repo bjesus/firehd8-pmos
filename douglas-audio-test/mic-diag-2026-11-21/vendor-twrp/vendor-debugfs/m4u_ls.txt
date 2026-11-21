@@ -1,0 +1,10 @@
+/sys/kernel/debug/m4u:
+buffer
+debug
+freemva
+log_level
+monitor
+mva
+pgtable
+port
+register
