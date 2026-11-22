@@ -4,7 +4,7 @@ Companion to **`TODO.md`**, which holds the per-task, register-level detail. Thi
 file is the practical entry point: how to reach the device, how to build and
 flash, how to debug it, what works today, and what is left.
 
-Written 2026-11-21, updated the same evening. Current image: **`douglas-boot57.img`**, kernel `#30`.
+Written 2026-11-21, updated through the night of 2026-11-22. Current image: **`douglas-boot59.img`**, kernel `#31`.
 
 ---
 
@@ -57,16 +57,18 @@ After a reboot, sleep ~70 s first, then retry `usbkick.sh` in a loop.
 ### Direct route over Wi-Fi (preferred since 2026-11-22)
 
 Once Wi-Fi associates (see §8 "Wi-Fi association"), the tablet is reachable directly:
-`ssh -i ~/.ssh/id_tablet root@fdfc:d767:207::87b` (stable DHCPv6 address). This is
-faster than the relay and survives relay-side USB wedges. Lesson from the night: tablet
+`ssh -i ~/.ssh/id_tablet root@192.168.8.<lease>` (check with `nmcli -g IP4.ADDRESS dev show
+wlan0` over the relay, or use `root@fdfc:d767:207::87b`, the stable DHCPv6 address; the v6
+path has been seen to stop answering after a resume while v4 kept working). This is
+faster than the relay and survives relay-side USB wedges. `scp` does not work (no
+sftp-server on the tablet): stream with `cat file | ssh ... "cat > dest"`. Lesson from the night: tablet
 commands that outlive a dropped USB link pin SSH channels on the relay's single
 authenticated connection; wrap remote commands in `timeout`, and never `nmcli con down`
 over a Wi-Fi session.
 
 ### Other routes
 
-* **Wi-Fi**: `fdfc:d767:207::87b` (wlan0 MAC pinned `00:08:22:38:88:fb`).
-  Works sometimes, times out often. Not reliable enough to depend on.
+* **Wi-Fi**: see "Direct route over Wi-Fi" above (real MAC `00:08:22:a4:b1:fe`, no pinning).
 * **TWRP / adb** — the recovery path, needs physical buttons. `adb` lives at
   `/nix/store/qalfgcmwsd2mmj652qk6ysajv20h2yzg-android-tools-35.0.2/bin/adb`
   on the relay. TWRP's kernel has **no `CONFIG_DEVMEM`**, so you cannot read
@@ -264,14 +266,15 @@ and you will only see the disabled state and draw the wrong conclusion.
 
 ## 7. What works today
 
-Kernel `#30` / `douglas-boot57.img` (boot47 + BT bridge fix + `m4u` disabled + thermal calibration + display domain always-on + watchdog bark IRQ/pretimeout panic + self-healing initramfs + uinput):
+Kernel `#31` / `douglas-boot59.img` (boot47 + BT bridge fix + `m4u` disabled + thermal calibration + display domain always-on + watchdog bark IRQ/pretimeout panic + self-healing initramfs + uinput + `CONFIG_NETDEVICES`/`TUN`):
 
 * **Display** `mtk-drm` 800x1280@60 DSI + **Mali-T720 Panfrost** GL ES 2.0,
   PWM backlight.
 * **Touch** Goodix GT9271; **keys** Power + Volume Down (interrupt-driven via
   in-tree `mtk-pmic-keys`) and Volume Up (polled, `douglas-keys.ko`).
-* **Wi-Fi + Bluetooth** MT6625L (vendor consys stack), pinned MAC, DHCP, BlueZ. BT works
-  since boot57 (the HCI bridge registered too early and bluetoothd never saw the adapter).
+* **Wi-Fi + Bluetooth** MT6625L (vendor consys stack), DHCPv4 + DHCPv6 via NetworkManager,
+  BlueZ. BT works since boot57 (the HCI bridge registered too early and bluetoothd never saw
+  the adapter); IPv4 works since boot59 (see §8 "Wi-Fi IPv4"). `apk add` works again.
 * **Audio playback + capture** MT8163 AFE DL1/VUL + MT6323 DAC/ADC, speaker/headphone
   switching, jack detect, hardware volume, built-in mic (left channel, ACC mode).
 * **Battery + charger** bq24297 at 1.5 A + MT6323 AUXADC gauge.
@@ -433,7 +436,7 @@ gate the DSI clocks before the CRTC's final vblank wait (`mediatek-drm.ko` in
   and the stack lands in pstore (`/dev/watchdog0`: timeout 31, pretimeout 15, governor panic).
 * **Self-healing initramfs**: `douglas-initfs/init` counts boots in `/root/.boot-attempts`;
   `start-phosh` touches `/root/.boot-ok` 90 s after start. Three consecutive boots without
-  the marker reflash `/root/douglas-boot-good.img` (= boot52) onto `mmcblk0p5` and reboot.
+  the marker reflash `/root/douglas-boot-good.img` (= boot59 since 2026-11-22) onto `mmcblk0p5` and reboot.
   Update the good image when a new one has proven itself. This made unattended kernel
   iteration safe; the reset-loop above needed a human and TWRP before it existed.
 * `CONFIG_INPUT_UINPUT=y` so the power key can be simulated remotely.
@@ -450,9 +453,33 @@ any cloned-MAC setting makes NM fail. Fix: `/etc/NetworkManager/conf.d/20-mac.co
 sets `wifi.cloned-mac-address=preserve`, the per-profile
 `802-11-wireless.cloned-mac-address` overrides were cleared (`nmcli con modify <name>
 802-11-wireless.cloned-mac-address ""`), and the pinning line was removed from
-`start-phosh`. Association + DHCPv6 work immediately; DHCPv4 obtains a lease
-and IPv4 is applied within ~4 s (192.168.8.x, default route, DNS); internet reachable.
-An earlier run where the v4 address vanished was caused by overlapping tests, not a fault.
+`start-phosh`. Association + DHCPv6 work immediately. IPv4 needed a second fix, below.
+
+### Wi-Fi IPv4 — FIXED 2026-11-22 (night), `douglas-boot59.img`
+
+Symptom: after every (re)connect NM showed `wlan0: connected` but no IPv4 address, no
+default route, `apk add` and `wget` failed with "Permission denied" / "Network
+unreachable" (the Alpine CDN has no AAAA record), while a hand-run
+`udhcpc -i wlan0 -n -q -s /bin/true` got a lease instantly. NM debug log
+(`nmcli general logging level DEBUG domains DHCP4,IP4`, read from busybox `syslogd`):
+
+```
+dhcp4 (wlan0): event: received ACK of 192.168.8.148 from 192.168.8.1
+dhcp4 (wlan0): accept lease
+dhcp4 (wlan0): accept failed: failed to accept lease: Protocol not available
+```
+
+Cause: the kernel config had **`CONFIG_NETDEVICES` disabled** (the Wi-Fi driver lives
+under `drivers/misc`, the USB gadget under `drivers/usb`, so nothing had pulled it in).
+Without it `SO_BINDTOIFINDEX` *and* `SO_BINDTODEVICE` return `ENOPROTOOPT`
+(`net/core/sock.c: sock_bindtoindex_locked`), and n-dhcp4's `socket_bind_if()` fails when
+it opens the per-lease UDP socket on accept. DISCOVER/OFFER/ACK still worked because they
+use a raw packet socket. Fix: `CONFIG_NETDEVICES=y`, `CONFIG_NET_CORE=y`, `CONFIG_TUN=y`
+(for VPNs; nothing else enabled). Verified on boot59: IPv4 applied right after
+association, `ping 1.1.1.1` and `apk add` work, and IPv4 comes back after a
+suspend/resume cycle. The earlier "resolved" note that blamed test interference was wrong;
+the `ipv4.dad-timeout=0` in `20-mac.conf` and the per-profile `dhcp-timeout 45` were added
+while chasing this and are harmless but not the fix.
 
 ### Bluetooth — FIXED 2026-11-22 (night), `douglas-boot57.img`
 
@@ -547,7 +574,9 @@ powering the consys chip off and unblocks it after resume; bluetoothd re-powers 
 | `douglas-boot54.img` | boot52 + display domain always-on + watchdog bark IRQ (level) |
 | `douglas-boot55.img` | boot54 + self-healing initramfs |
 | `douglas-boot56.img` | boot55 + uinput + watchdog sysfs |
-| `douglas-boot57.img` | boot56 + BlueZ HCI bridge registers after STP ready → Bluetooth works. **CURRENT** |
+| `douglas-boot57.img` | boot56 + BlueZ HCI bridge registers after STP ready → Bluetooth works |
+| `douglas-boot58.img` | unused duplicate of boot57 |
+| `douglas-boot59.img` | boot57 + `CONFIG_NETDEVICES`/`NET_CORE`/`TUN` → NM gets IPv4. **CURRENT**, also `/root/douglas-boot-good.img` |
 
 ### Modules on the tablet (`/root/mods/`), each with a rollback copy
 

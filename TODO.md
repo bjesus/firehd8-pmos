@@ -565,8 +565,10 @@ pre-existing bug worth its own investigation.
 
 ---
 
-### 8. Wi-Fi IPv4 — resolved 2026-11-22: association fix (cloned-MAC) + lease applied in ~4 s; the
-earlier vanishing address was test interference. See HANDOFF.md.
+### 8. Wi-Fi IPv4 — resolved 2026-11-22 (boot59): two causes. Association failed because of
+the unsupported cloned-MAC setting; then NM received the DHCP lease but could not accept it
+("Protocol not available") because the kernel lacked `CONFIG_NETDEVICES`, which gates
+`SO_BINDTODEVICE`/`SO_BINDTOIFINDEX`. Both fixed; see HANDOFF.md §8 "Wi-Fi IPv4".
 
 ## Session Notes / Traps (2026-11-21)
 
@@ -644,7 +646,8 @@ Capture `dmesg` immediately after boot, or silence those prints. `pstore`/`ramoo
   `CONFIG_THERMAL_EMULATION=y`.
 - `douglas-boot44.img` — `+` `CONFIG_MTK_IOMMU`/`MTK_SMI`: removes the 10 s boot
   stall but **breaks panfrost**. Kept only to reproduce that (see task 6 notes).
-- `douglas-boot47.img` — `+` 1050 MHz OPP, TMP103 nodes disabled. **Current.**
+- `douglas-boot47.img` — `+` 1050 MHz OPP, TMP103 nodes disabled.
+- `douglas-boot48`…`boot59` — see the image table in HANDOFF.md; **boot59 is current.**
 
 Out-of-tree module versions currently on the device (`/root/mods/`), each with a
 rollback copy beside it:
