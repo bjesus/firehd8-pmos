@@ -58,36 +58,58 @@ per-commit builds.
 
 ## What the build produces
 
-The workflow builds the kernel (base tree plus `kernel/0001-douglas-port.patch`, config
-`kernel/douglas-6.1.config`), embeds the initramfs from `douglas-initfs/`, and packs it
-into an Amazon-LK-compatible `douglas-boot.img`. It also builds the loadable modules
-(`douglas-mods.tar.gz`: the display stack and the out-of-tree audio, keys and battery
-modules) and publishes the exact `.config`.
+Every tagged release carries a complete installation, built by GitHub Actions from this
+repository alone:
 
-The boot image contains only the kernel. The initramfs mounts `/dev/mmcblk0p16`
-and runs `/sbin/douglas-init` from there, so you need a root filesystem on that
-partition. The scripts that rootfs expects are in `rootfs/` (`sbin/douglas-init`,
-`usr/local/sbin/start-phosh`, the NetworkManager and elogind hooks); the modules from
-`douglas-mods.tar.gz` go to `/root/mods/` on it. Preparing that rootfs is not automated
-yet. `HANDOFF.md` describes the setup that is running today.
+| File | Contents |
+|---|---|
+| `douglas-boot.img` | kernel 6.1 + device tree + initramfs, packed for the Amazon LK bootloader. Goes to the `boot` partition |
+| `douglas-rootfs.img.gz` | Alpine Linux 3.21 with Phosh, NetworkManager, BlueZ, PulseAudio, the Wi-Fi/BT firmware, the kernel modules and the douglas scripts. ext4, grows to the whole partition on first boot. Goes to the `userdata` partition |
+| `douglas-mods.tar.gz` | the loadable modules alone, for updating an existing install (`/root/mods/`) |
+| `douglas-boot.config`, `SHA256SUMS` | the exact kernel config and checksums |
 
-## Flashing from TWRP
+The kernel job builds the base tree plus `kernel/0001-douglas-port.patch` with Ubuntu's
+aarch64 GCC. The rootfs job runs `tools/rootfs-inner.sh` in an aarch64 Alpine container
+(QEMU user emulation): it installs the packages in `tools/rootfs-packages.txt`, lays the
+`rootfs/` tree from this repo over them, creates the user account and writes the ext4
+image. Pushes to `main` rebuild the kernel; the rootfs is built for tags and on demand
+(Actions tab, "Run workflow").
+
+**Default login:** user `user`, password `douglas`, passwordless `sudo`. SSH (dropbear)
+is on from the first boot; the hostname is `douglas`, so `ssh user@douglas.lan` or
+`ssh user@douglas` usually works once the tablet is on Wi-Fi. Change the password with
+`passwd` after the first login. There is no root password; use `sudo`.
+
+## Installing from TWRP
 
 Prerequisites: a Fire HD 8 2017 with the bootloader unlocked through
-[amonet](https://github.com/chaosmaster/amonet) and TWRP installed, and a rootfs on
-`mmcblk0p16` as described above. The boot image goes to the `boot` partition,
-`/dev/block/mmcblk0p5`.
+[amonet](https://github.com/chaosmaster/amonet) and TWRP installed (hold Power +
+Volume Down to enter it), `adb` on your computer, and the two images from a release.
+Partitions: `boot` is `/dev/block/mmcblk0p5`, `userdata` is `/dev/block/mmcblk0p16`
+(12 GB). **The rootfs image erases `userdata`, i.e. the Android user data.** The
+Android system partitions stay intact, and TWRP stays available.
 
 ```sh
+# 1. root filesystem (about 1.3 GB of data, streamed and uncompressed on the device)
+gunzip -c douglas-rootfs.img.gz | adb exec-in "dd of=/dev/block/mmcblk0p16 bs=4M"
+# 2. kernel
 adb push douglas-boot.img /tmp/
 adb shell "dd if=/tmp/douglas-boot.img of=/dev/block/mmcblk0p5 bs=1M conv=fsync && sync"
 adb shell "dd if=/dev/block/mmcblk0p5 bs=$(stat -c %s douglas-boot.img) count=1 | sha256sum"
 adb reboot
 ```
 
-Compare the last hash with `SHA256SUMS`. Flashing only replaces the kernel; the
-Android system partitions are left untouched, and TWRP remains available with
-Power + Volume Down.
+Compare the last hash with `SHA256SUMS`. The first boot takes a little longer while the
+filesystem grows to the full partition; then Phosh starts and asks for Wi-Fi.
+To update an existing install, flash only `douglas-boot.img` and, if the kernel
+version changed, unpack `douglas-mods.tar.gz` into `/root/` on the device.
+
+**Firmware notice.** `rootfs/lib/firmware` holds the MT6625L Wi-Fi/Bluetooth firmware
+(`WMT_SOC.cfg`, `ROMv2_lm_patch_*`, `WIFI_RAM_CODE_8163`), the Goodix touch firmware
+and the MD32 blobs taken from the device's Amazon firmware; they are the same files
+[LibreEcho-mt8163-connectivity](https://github.com/aslater3/LibreEcho-mt8163-connectivity)
+and the Amazon GPL kernel sources ship. They are MediaTek/Amazon proprietary binaries,
+redistributed here only so the images are installable.
 
 ## Repository layout
 
@@ -97,13 +119,12 @@ Power + Volume Down.
 | `douglas-initfs/` | the initramfs (busybox + `init`, switch_root to the rootfs, self-heal logic) |
 | `douglas-alsa/` | ALSA machine driver (playback + capture), battery gauge and light sensor modules |
 | `douglas-keys/` | Volume Up key driver |
-| `rootfs/` | scripts and config installed on the Alpine rootfs |
+| `rootfs/` | everything laid over the Alpine packages: PID 1 (`sbin/douglas-init`), `start-phosh`, hooks, firmware, defaults |
+| `tools/` | rootfs build script and package list used by the workflow |
 | `reference/` | the vendor DTB tail and the bootloader's `chosen` node (`atag,devinfo` holds the thermal calibration) |
 | `douglas-audio-test/` | audio diagnostics, including vendor-kernel (TWRP) reference dumps |
 | `mkboot_douglas.py`, `*.sh`, `*.py` | boot-image packing and amonet/flash helpers |
 | `HANDOFF.md` | how to reach, build, flash and debug the device, what works, what is left |
 | `TODO.md` | register-level detail per remaining task |
 
-The Wi-Fi/Bluetooth driver is built into the kernel; its firmware files on the rootfs
-(`/lib/firmware`: `WMT_SOC.cfg`, `ROMv2_lm_patch_*`, `WIFI_RAM_CODE_8163`) come from
-[LibreEcho-mt8163-connectivity](https://github.com/aslater3/LibreEcho-mt8163-connectivity).
+The Wi-Fi/Bluetooth driver itself is built into the kernel.
