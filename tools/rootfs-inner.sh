@@ -82,7 +82,10 @@ find "$R" -xdev -type f -perm /6000 | while read -r f; do
 done > /tmp/suid.cmds
 cat /tmp/suid.cmds
 debugfs -w -f /tmp/suid.cmds "$OUT/douglas-rootfs.img" >/dev/null
-debugfs -R "stat /usr/bin/sudo" "$OUT/douglas-rootfs.img" 2>/dev/null | grep -q "Mode:  0*4755" || { echo "sudo is not setuid in the image"; exit 1; }
+for f in "/usr/bin/sudo 4755" "/usr/libexec/dbus-daemon-launch-helper 4750" "/sbin/unix_chkpwd 2755" "/usr/bin/passwd 4755"; do
+  set -- $f
+  debugfs -R "stat $1" "$OUT/douglas-rootfs.img" 2>/dev/null | grep -q "Mode:  0*$2" || { echo "$1 is not mode $2 in the image"; exit 1; }
+done
 e2fsck -fn "$OUT/douglas-rootfs.img" >/dev/null
 gzip -9 -n "$OUT/douglas-rootfs.img"
 ls -l "$OUT"

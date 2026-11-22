@@ -55,10 +55,10 @@ index 0ec90cb3e..dc639bcd9 100644
 +dtb-y += mt8163-douglas.dtb
 diff --git a/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
 new file mode 100644
-index 000000000..4cd041f55
+index 000000000..08d6b0184
 --- /dev/null
 +++ b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
-@@ -0,0 +1,1092 @@
+@@ -0,0 +1,1097 @@
 +// SPDX-License-Identifier: GPL-2.0
 +/*
 + * Amazon Fire HD 8 (2017) - codename "douglas"
@@ -484,6 +484,11 @@ index 000000000..4cd041f55
 +				 */
 +				keys {
 +					compatible = "mediatek,mt6323-keys";
++					/* PMIC hardware reset on an ~8 s Power hold, independent of
++					 * the kernel and userspace: the only way out when the
++					 * session cannot reach elogind (2026-11-22). */
++					mediatek,long-press-mode = <1>;
++					power-off-time-sec = <0>;
 +
 +					power {
 +						linux,keycodes = <KEY_POWER>;
@@ -1549,10 +1554,31 @@ index 002b0f6ca..4d1d803f3 100644
  			       IRQF_TRIGGER_NONE, dev_name(dev), priv);
  	if (ret < 0) {
 diff --git a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
-index aba26ec9a..6c4fe4ac8 100644
+index aba26ec9a..e052dea64 100644
 --- a/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
 +++ b/drivers/gpu/drm/mediatek/mtk_drm_crtc.c
-@@ -394,25 +394,12 @@ static int mtk_crtc_ddp_hw_init(struct mtk_drm_crtc *mtk_crtc)
+@@ -4,6 +4,7 @@
+  */
+ 
+ #include <linux/clk.h>
++#include <linux/of.h>
+ #include <linux/dma-mapping.h>
+ #include <linux/mailbox_controller.h>
+ #include <linux/pm_runtime.h>
+@@ -344,6 +345,12 @@ static void ddp_cmdq_cb(struct mbox_client *cl, void *mssg)
+ }
+ #endif
+ 
++static bool mtk_crtc_comp_is_dsi(struct mtk_ddp_comp *comp)
++{
++	return comp->dev && comp->dev->of_node &&
++	       of_device_is_compatible(comp->dev->of_node, "mediatek,mt8173-dsi");
++}
++
+ static int mtk_crtc_ddp_hw_init(struct mtk_drm_crtc *mtk_crtc)
+ {
+ 	struct drm_crtc *crtc = &mtk_crtc->base;
+@@ -394,25 +401,20 @@ static int mtk_crtc_ddp_hw_init(struct mtk_drm_crtc *mtk_crtc)
  		goto err_mutex_unprepare;
  	}
  
@@ -1581,14 +1607,20 @@ index aba26ec9a..6c4fe4ac8 100644
 +	 */
 +	mtk_ddp_comp_config(mtk_crtc->ddp_comp[0], width, height, vrefresh, bpc, NULL);
 +	mtk_ddp_comp_start(mtk_crtc->ddp_comp[0]);
++	/*
++	 * Hold a DSI power reference for the lifetime of the CRTC so the bridge's
++	 * post_disable (which runs before the CRTC's final vblank wait) does not
++	 * gate the DSI clocks; hw_fini drops it after that wait.
++	 */
++	for (i = 0; i < mtk_crtc->ddp_comp_nr; i++)
++		if (mtk_crtc_comp_is_dsi(mtk_crtc->ddp_comp[i]))
++			mtk_ddp_comp_start(mtk_crtc->ddp_comp[i]);
  
  	/* Initially configure all planes */
  	for (i = 0; i < mtk_crtc->layer_nr; i++) {
-@@ -445,26 +432,7 @@ static void mtk_crtc_ddp_hw_fini(struct mtk_drm_crtc *mtk_crtc)
- 	struct drm_device *drm = mtk_crtc->base.dev;
- 	struct drm_crtc *crtc = &mtk_crtc->base;
+@@ -447,24 +449,9 @@ static void mtk_crtc_ddp_hw_fini(struct mtk_drm_crtc *mtk_crtc)
  	unsigned long flags;
--	int i;
+ 	int i;
  
 -	for (i = 0; i < mtk_crtc->ddp_comp_nr; i++) {
 -		mtk_ddp_comp_stop(mtk_crtc->ddp_comp[i]);
@@ -1596,7 +1628,7 @@ index aba26ec9a..6c4fe4ac8 100644
 -			mtk_ddp_comp_bgclr_in_off(mtk_crtc->ddp_comp[i]);
 -	}
 -
--	for (i = 0; i < mtk_crtc->ddp_comp_nr; i++)
+ 	for (i = 0; i < mtk_crtc->ddp_comp_nr; i++)
 -		mtk_mutex_remove_comp(mtk_crtc->mutex,
 -					   mtk_crtc->ddp_comp[i]->id);
 -	mtk_mutex_disable(mtk_crtc->mutex);
@@ -1608,6 +1640,8 @@ index aba26ec9a..6c4fe4ac8 100644
 -					   mtk_crtc->ddp_comp[i]->id);
 -	}
 -	mtk_mutex_remove_comp(mtk_crtc->mutex, mtk_crtc->ddp_comp[i]->id);
++		if (mtk_crtc_comp_is_dsi(mtk_crtc->ddp_comp[i]))
++			mtk_ddp_comp_stop(mtk_crtc->ddp_comp[i]);
  	mtk_crtc_ddp_clk_disable(mtk_crtc);
  	mtk_mutex_unprepare(mtk_crtc->mutex);
  
@@ -2192,6 +2226,103 @@ index 4c5b3c9a6..a1251b9bb 100644
  	}
  
  #if CFG_WMT_PATCH_DL_OPTM
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c
+index 36d6a13eb..ab3d69021 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c
+@@ -266,17 +266,47 @@ static void mtk_bt_hci_receive(const UINT8 *data, INT32 size)
+ 	mtk_hci.hdev->stat.byte_rx += size;
+ }
+ 
+-static int mtk_bt_hci_init(void)
++/*
++ * hci_register_dev() immediately queues the core's setup power-on, which opens
++ * the device.  On MT8163 the STP/WMT transport only becomes ready after the
++ * userspace WMT launcher has loaded the firmware patches, so an early
++ * registration always fails that first open and leaves HCI_SETUP pending
++ * (mgmt never announces the controller; bluetoothd sees nothing).  Poll for the
++ * transport and register only once it is ready, then let the core do its
++ * normal power-on.
++ */
++static struct delayed_work mtk_hci_reg_work;
++static int mtk_hci_reg_tries;
++
++static void mtk_bt_hci_reg_work(struct work_struct *work)
+ {
+ 	int result;
+ 
++	if (mtk_wcn_stp_is_ready() != MTK_WCN_BOOL_TRUE) {
++		if (++mtk_hci_reg_tries < 600) {	/* up to 5 min */
++			schedule_delayed_work(&mtk_hci_reg_work, msecs_to_jiffies(500));
++			return;
++		}
++		pr_err("ECHO_BT_HCI: STP never became ready, HCI not registered\n");
++		return;
++	}
++	pr_info("ECHO_BT_HCI: STP ready after %d polls, registering hci\n", mtk_hci_reg_tries);
++	result = hci_register_dev(mtk_hci.hdev);
++	if (result) {
++		pr_err("ECHO_BT_HCI: hci_register_dev failed %d\n", result);
++		hci_free_dev(mtk_hci.hdev);
++		mtk_hci.hdev = NULL;
++	}
++}
++
++static int mtk_bt_hci_init(void)
++{
+ 	mtk_hci.hdev = hci_alloc_dev();
+ 	if (!mtk_hci.hdev)
+ 		return -ENOMEM;
+ 
+ 	mtk_hci.hdev->bus = HCI_VIRTUAL;
+ 	mtk_hci.hdev->dev_type = HCI_PRIMARY;
+-	set_bit(HCI_QUIRK_DEFERRED_SETUP, &mtk_hci.hdev->quirks);
+ 	/* The MT8163 BTIF firmware advertises extended LMP features but returns
+ 	 * a non-success status for Read Local Extended Features.  Those optional
+ 	 * pages are not needed for the BR/EDR transport used by this board. */
+@@ -291,24 +321,10 @@ static int mtk_bt_hci_init(void)
+ 	hci_set_drvdata(mtk_hci.hdev, &mtk_hci);
+ 	skb_queue_head_init(&mtk_hci.txq);
+ 	INIT_DELAYED_WORK(&mtk_hci.work, mtk_bt_hci_work);
+-	result = hci_register_dev(mtk_hci.hdev);
+-	if (result) {
+-		mtk_wcn_stp_register_if_rx(NULL);
+-		cancel_delayed_work_sync(&mtk_hci.work);
+-		skb_queue_purge(&mtk_hci.txq);
+-		hci_free_dev(mtk_hci.hdev);
+-		mtk_hci.hdev = NULL;
+-	} else {
+-		/* hci_register_dev() queues an immediate setup power-on.  The
+-		 * MT8163 WMT callback is registered later in boot, so that
+-		 * implicit open always races WMT and leaves HCI_SETUP pending
+-		 * after failing.  Keep the controller registered but defer its
+-		 * first open to the explicit management enable request, after
+-		 * wmt_configure has installed the BTIF transport. */
+-		cancel_work_sync(&mtk_hci.hdev->power_on);
+-		hci_dev_clear_flag(mtk_hci.hdev, HCI_AUTO_OFF);
+-	}
+-	return result;
++	INIT_DELAYED_WORK(&mtk_hci_reg_work, mtk_bt_hci_reg_work);
++	mtk_hci_reg_tries = 0;
++	schedule_delayed_work(&mtk_hci_reg_work, msecs_to_jiffies(2000));
++	return 0;
+ }
+ 
+ static void mtk_bt_hci_exit(void)
+@@ -316,10 +332,12 @@ static void mtk_bt_hci_exit(void)
+ 	if (!mtk_hci.hdev)
+ 		return;
+ 
++	cancel_delayed_work_sync(&mtk_hci_reg_work);
+ 	mtk_wcn_stp_register_if_rx(NULL);
+ 	cancel_delayed_work_sync(&mtk_hci.work);
+ 	skb_queue_purge(&mtk_hci.txq);
+-	hci_unregister_dev(mtk_hci.hdev);
++	if (mtk_hci.hdev->flags & (1 << HCI_UP) || mtk_hci_reg_tries < 600)
++		hci_unregister_dev(mtk_hci.hdev);
+ 	hci_free_dev(mtk_hci.hdev);
+ 	mtk_hci.hdev = NULL;
+ }
 diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/mtk_wcn_consys_hw.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/mtk_wcn_consys_hw.c
 index dc5a41206..12030f188 100644
 --- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/mtk_wcn_consys_hw.c

@@ -1,7 +1,7 @@
 From 83a78c5ba40a104f677211cf7aaccb64f2b5c2c3 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sat, 21 Nov 2026 22:18:42 +0100
-Subject: [PATCH 1/4] arm64: mt8163-douglas: mainline port of the Amazon Fire
+Subject: [PATCH 1/5] arm64: mt8163-douglas: mainline port of the Amazon Fire
  HD 8 (2017)
 
 Built-in device tree for douglas (LK's FDT is unusable), NT35521 DSI panel,
@@ -3287,7 +3287,7 @@ index 000000000..977ccb45d
 From 471771633e4a16f87e4f84e91fbde034a932c86e Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sat, 21 Nov 2026 23:58:04 +0100
-Subject: [PATCH 2/4] mt8163-douglas: suspend fixes, thermal calibration,
+Subject: [PATCH 2/5] mt8163-douglas: suspend fixes, thermal calibration,
  watchdog bark, boot-stall fix
 
 - scpsys: keep the display power domain always on; the DSI controller runs on
@@ -3346,7 +3346,7 @@ index 250ce2dcd..417d8e192 100644
 From eb13032d1f32f627966958cc942c6689234f0918 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sun, 22 Nov 2026 00:26:55 +0100
-Subject: [PATCH 3/4] mt8163-connectivity: register the BlueZ HCI bridge only
+Subject: [PATCH 3/5] mt8163-connectivity: register the BlueZ HCI bridge only
  once STP is ready
 
 hci_register_dev() queues the core's setup power-on immediately; on MT8163
@@ -3466,7 +3466,7 @@ index 36d6a13eb..ab3d69021 100644
 From a911117c73d542074ccdf499a7f8aa680184691a Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sun, 22 Nov 2026 00:30:50 +0100
-Subject: [PATCH 4/4] drm/mediatek: douglas: keep DSI powered across the CRTC's
+Subject: [PATCH 4/5] drm/mediatek: douglas: keep DSI powered across the CRTC's
  final vblank wait
 
 The bridge's post_disable gated the DSI clocks before mtk_drm_crtc_atomic_disable
@@ -3531,6 +3531,41 @@ index 6c4fe4ac8..e052dea64 100644
  	mtk_crtc_ddp_clk_disable(mtk_crtc);
  	mtk_mutex_unprepare(mtk_crtc->mutex);
  
+-- 
+2.56.1
+
+
+From 79425471636fd5e5c9151408ed3f02df8c330466 Mon Sep 17 00:00:00 2001
+From: Yo'av Moshe <github@yoavmoshe.com>
+Date: Sun, 22 Nov 2026 12:47:56 +0100
+Subject: [PATCH 5/5] arm64: dts: mt8163-douglas: enable the PMIC long-press
+ hardware reset
+
+An 8 s Power hold resets the board through the MT6323 regardless of the
+kernel or userspace state. Without it a session that cannot reach elogind
+leaves the user with no way to power the tablet off.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+---
+ arch/arm64/boot/dts/mediatek/mt8163-douglas.dts | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
+index 4cd041f55..08d6b0184 100644
+--- a/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
++++ b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
+@@ -423,6 +423,11 @@ rtc {
+ 				 */
+ 				keys {
+ 					compatible = "mediatek,mt6323-keys";
++					/* PMIC hardware reset on an ~8 s Power hold, independent of
++					 * the kernel and userspace: the only way out when the
++					 * session cannot reach elogind (2026-11-22). */
++					mediatek,long-press-mode = <1>;
++					power-off-time-sec = <0>;
+ 
+ 					power {
+ 						linux,keycodes = <KEY_POWER>;
 -- 
 2.56.1
 
