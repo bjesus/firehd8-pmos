@@ -22,6 +22,8 @@ apk --root "$R" --initdb --arch aarch64 --repositories-file "$R/etc/apk/reposito
 
 # douglas-specific files: PID 1 (/sbin/douglas-init), session start, hooks, firmware
 cp -a "$SRC/rootfs/." "$R/"
+# the checkout belongs to the runner user; everything we overlay belongs to root
+for d in "$SRC"/rootfs/*; do chown -R 0:0 "$R/$(basename "$d")"; done
 chmod 755 "$R/sbin/douglas-init" "$R"/usr/local/sbin/*
 mkdir -p "$R/etc/firmware" && cp "$R"/lib/firmware/* "$R/etc/firmware/"
 # kernel modules loaded by start-phosh / init-tier1.sh
@@ -35,7 +37,11 @@ rm -f "$R/etc/machine-id" "$R/etc/resolv.conf"
 
 # user account: user/douglas, wheel => passwordless sudo (etc/sudoers.d/wheel), ssh via dropbear
 chroot "$R" adduser -D -u 1000 -s /bin/sh -g "Fire HD 8 user" user
-for g in wheel audio input video seat plugdev netdev; do chroot "$R" addgroup user "$g"; done
+for g in wheel audio input video seat plugdev netdev; do
+  chroot "$R" getent group "$g" >/dev/null || chroot "$R" addgroup -S "$g"
+  chroot "$R" addgroup user "$g"
+done
+grep -E "^(seat|wheel|video|input|audio|plugdev):" "$R/etc/group"
 echo "user:douglas" | chroot "$R" chpasswd
 chroot "$R" passwd -l root >/dev/null
 chown -R 1000:1000 "$R/home/user"
@@ -43,6 +49,11 @@ chmod 700 "$R/home/user"
 chroot "$R" dconf update
 
 rm -rf "$R/var/cache/apk"/* "$R/root/.cache"
+# sanity checks that would otherwise only show up on the device
+stat -c "%U:%G %a %n" "$R/sbin/douglas-init" "$R/etc/phosh/phoc.ini" "$R/home/user" "$R/root/mods"
+[ "$(stat -c %u "$R/sbin/douglas-init")" = 0 ] || { echo "overlay not owned by root"; exit 1; }
+grep -q '^user:\$' "$R/etc/shadow" || { echo "user has no password hash"; exit 1; }
+grep -q '^seat:.*user' "$R/etc/group" || { echo "user not in seat group"; exit 1; }
 du -sh "$R" | sed "s|$R|rootfs|"
 
 # ext4 image, populated without loop devices or root on the host; grows to the whole
