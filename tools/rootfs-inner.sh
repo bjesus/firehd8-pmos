@@ -54,8 +54,12 @@ for f in /usr/bin/sudo /usr/bin/passwd /usr/bin/chage /usr/bin/chfn /usr/bin/chs
          /usr/bin/expiry /usr/bin/pkexec /usr/lib/polkit-1/polkit-agent-helper-1; do
   [ -e "$R$f" ] && chmod 4755 "$R$f"
 done
-chown root:messagebus "$R/usr/libexec/dbus-daemon-launch-helper" && chmod 4750 "$R/usr/libexec/dbus-daemon-launch-helper"
-chown root:shadow "$R/sbin/unix_chkpwd" && chmod 2755 "$R/sbin/unix_chkpwd"
+# group names only resolve inside the target root
+chroot "$R" chown root:messagebus /usr/libexec/dbus-daemon-launch-helper
+chmod 4750 "$R/usr/libexec/dbus-daemon-launch-helper"
+chroot "$R" chown root:shadow /sbin/unix_chkpwd
+chmod 2755 "$R/sbin/unix_chkpwd"
+stat -c "%a %U:%G %n" "$R/usr/libexec/dbus-daemon-launch-helper" "$R/sbin/unix_chkpwd" | sed "s|$R||"
 find "$R" -xdev -type f -perm /6000 | sed "s|^$R||"
 
 rm -rf "$R/var/cache/apk"/* "$R/root/.cache"
