@@ -1,0 +1,16 @@
+[org/gnome/desktop/a11y/applications]
+screen-keyboard-enabled=true
+
+[org/gnome/desktop/interface]
+color-scheme='prefer-dark'
+clock-show-date=true
+
+[org/gnome/desktop/session]
+idle-delay=uint32 300
+
+[org/gnome/desktop/input-sources]
+sources=[('xkb', 'us')]
+
+[org/gnome/settings-daemon/plugins/color]
+night-light-enabled=true
+night-light-schedule-automatic=false

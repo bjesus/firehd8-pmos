@@ -1,0 +1,6 @@
+#!/bin/sh
+echo "Writing boot-recovery BCB to /dev/mmcblk0p12..."
+printf 'boot-recovery\0\0\0' | dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync
+sync
+sleep 1
+reboot -f

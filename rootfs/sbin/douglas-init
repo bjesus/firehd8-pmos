@@ -12,6 +12,16 @@ chmod 1777 /dev/shm /tmp
 
 exec >/dev/kmsg 2>&1
 echo "=== ALPINE LINUX 3.21 ON FIRE HD 8 (DOUGLAS) MAINLINE 6.1 ==="
+
+# First boot of a flashed image: grow the filesystem to the whole partition and
+# give the machine an identity.
+if [ ! -f /var/lib/douglas-firstboot-done ]; then
+  echo "FIRSTBOOT: resizing root filesystem"
+  resize2fs /dev/mmcblk0p16 2>&1 | tail -1
+  [ -s /etc/machine-id ] || dbus-uuidgen > /etc/machine-id 2>/dev/null || true
+  mkdir -p /var/lib && touch /var/lib/douglas-firstboot-done
+  sync
+fi
 uname -a
 hostname -F /etc/hostname
 

@@ -1,11 +1,19 @@
-name: build boot image
+name: build images
 
 on:
   push:
     branches: [main]
-    tags: ['v*']
-    paths: ['kernel/**', 'douglas-initfs/**', 'douglas-alsa/*.c', 'douglas-alsa/Makefile', 'douglas-keys/*.c', 'douglas-keys/Makefile', 'mkboot_douglas.py', 'reference/vendor-dtb-tail.bin', '.github/workflows/build.yml']
+    tags: ["v*"]
+    paths: ["kernel/**", "douglas-initfs/**", "douglas-alsa/*.c", "douglas-alsa/Makefile", "douglas-keys/*.c", "douglas-keys/Makefile", "mkboot_douglas.py", "reference/vendor-dtb-tail.bin", ".github/workflows/build.yml"]
   workflow_dispatch:
+    inputs:
+      rootfs:
+        description: "Also build the root filesystem image"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
 
 env:
   KERNEL_REPO: https://github.com/aslater3/LibreEcho-Linux-6.1
@@ -13,7 +21,7 @@ env:
   CROSS: aarch64-linux-gnu-
 
 jobs:
-  build:
+  kernel:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +49,7 @@ jobs:
           sed -i "s|^CONFIG_INITRAMFS_SOURCE=.*|CONFIG_INITRAMFS_SOURCE=\"$GITHUB_WORKSPACE/douglas-initfs\"|" out/.config
           chmod 755 douglas-initfs/init douglas-initfs/bin/busybox
           make -C kernel-src O=$GITHUB_WORKSPACE/out ARCH=arm64 CROSS_COMPILE=$CROSS olddefconfig
-          grep -E '^CONFIG_(INITRAMFS_SOURCE|NETDEVICES|MTK_COMBO|LOCALVERSION)' out/.config
+          grep -E "^CONFIG_(INITRAMFS_SOURCE|NETDEVICES|MTK_COMBO|LOCALVERSION)" out/.config
 
       - name: Build kernel, DTBs and in-tree modules
         run: |
@@ -62,9 +70,9 @@ jobs:
         run: |
           python3 mkboot_douglas.py out/arch/arm64/boot/Image dist/douglas-boot.img
           cp out/.config dist/douglas-boot.config
-          cd dist && sha256sum douglas-boot.img > SHA256SUMS && cat SHA256SUMS
           tar -C $GITHUB_WORKSPACE/dist -czf $GITHUB_WORKSPACE/dist/douglas-mods.tar.gz mods
           rm -rf $GITHUB_WORKSPACE/dist/mods
+          cd dist && sha256sum douglas-boot.img douglas-mods.tar.gz > SHA256SUMS && cat SHA256SUMS
 
       - uses: actions/upload-artifact@v4
         with:
@@ -73,10 +81,55 @@ jobs:
           if-no-files-found: error
 
       - name: Release (tags only)
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, refs/tags/v)
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" dist/douglas-boot.img dist/douglas-mods.tar.gz dist/douglas-boot.config dist/SHA256SUMS \
-            --title "douglas boot image ${GITHUB_REF_NAME}" \
-            --notes "Kernel boot image for the Amazon Fire HD 8 (2017, douglas). See README.md for what it is, what it needs, and how to flash it from TWRP."
+          gh release create "${GITHUB_REF_NAME}" dist/douglas-boot.img dist/douglas-mods.tar.gz dist/douglas-boot.config \
+            --title "douglas ${GITHUB_REF_NAME}" \
+            --notes "Kernel boot image and root filesystem for the Amazon Fire HD 8 (2017, douglas). See README.md: what works, what the images need, and how to flash them from TWRP. Default login user / douglas (SSH enabled)."
+
+  rootfs:
+    needs: kernel
+    if: startsWith(github.ref, refs/tags/v) || (github.event_name == workflow_dispatch && inputs.rootfs)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: douglas-boot-${{ github.sha }}
+          path: dist
+
+      - name: Unpack kernel modules
+        run: |
+          mkdir -p dist-kernel out-rootfs
+          tar -C dist-kernel -xzf dist/douglas-mods.tar.gz
+          ls dist-kernel/mods
+
+      - uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Build the Alpine root filesystem (aarch64 under QEMU)
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v "$GITHUB_WORKSPACE:/work" -v "$GITHUB_WORKSPACE/out-rootfs:/out" \
+            alpine:3.21 sh /work/tools/rootfs-inner.sh
+          cd out-rootfs && sha256sum douglas-rootfs.img.gz > SHA256SUMS.rootfs && cat SHA256SUMS.rootfs
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ !startsWith(github.ref, refs/tags/v) }}
+        with:
+          name: douglas-rootfs-${{ github.sha }}
+          path: out-rootfs/
+          retention-days: 2
+          if-no-files-found: error
+
+      - name: Attach to release (tags only)
+        if: startsWith(github.ref, refs/tags/v)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat dist/SHA256SUMS out-rootfs/SHA256SUMS.rootfs > SHA256SUMS
+          gh release upload "${GITHUB_REF_NAME}" out-rootfs/douglas-rootfs.img.gz SHA256SUMS --clobber

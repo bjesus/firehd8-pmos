@@ -1,0 +1,17 @@
+# Alpine packages installed into the douglas root filesystem (one per line, # = comment).
+# Base
+alpine-baselayout alpine-keys alpine-release apk-tools busybox libc-utils
+e2fsprogs-extra sudo nano htop curl strace python3
+# Session, shell, desktop
+dbus elogind eudev seatd polkit-elogind upower iio-sensor-proxy
+phoc phosh squeekboard foot wlr-randr dconf
+mesa-dri-gallium mesa-egl mesa-gles
+adwaita-icon-theme font-dejavu font-noto font-noto-emoji
+# Apps
+epiphany nautilus foliate gnome-software gnome-software-plugin-apk yt-dlp
+# Networking, Bluetooth, SSH
+networkmanager networkmanager-cli networkmanager-wifi wpa_supplicant wireless-tools iw
+bluez bluez-btmgmt bluez-deprecated
+dropbear
+# Audio
+alsa-utils pulseaudio pulseaudio-alsa
