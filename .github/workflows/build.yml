@@ -91,7 +91,7 @@ jobs:
 
   rootfs:
     needs: kernel
-    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == workflow_dispatch && inputs.rootfs)
+    if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.rootfs)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
