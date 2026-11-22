@@ -115,6 +115,17 @@ reflash.**
 
 ## 4. Build and flash
 
+### Zero-setup: GitHub Actions
+
+`.github/workflows/build.yml` builds the same thing from the repo alone (base commit +
+`kernel/0001-douglas-port.patch`, `kernel/douglas-6.1.config`, `douglas-initfs/`) and
+uploads `douglas-boot.img`, `douglas-mods.tar.gz` (in-tree display modules + out-of-tree
+modules, for `/root/mods/`), the `.config` and `SHA256SUMS`; a `v*` tag makes a Release.
+About 10 minutes per run. The first CI image was flashed and verified on 2026-11-22.
+Trap met the same morning: `rootfs/usr/local/sbin/start-phosh` carried an empty `else`
+branch (shell syntax error) that killed the session start after module load. `sh -n`
+every rootfs script before copying it to the tablet.
+
 ### Build
 
 ```sh
@@ -579,6 +590,7 @@ powering the consys chip off and unblocks it after resume; bluetoothd re-powers 
 | `douglas-boot57.img` | boot56 + BlueZ HCI bridge registers after STP ready → Bluetooth works |
 | `douglas-boot58.img` | unused duplicate of boot57 |
 | `douglas-boot59.img` | boot57 + `CONFIG_NETDEVICES`/`NET_CORE`/`TUN` → NM gets IPv4. **CURRENT**, also `/root/douglas-boot-good.img` |
+| CI `douglas-boot.img` (GitHub Actions, run 44998827495) | same sources as boot59 built with Ubuntu GCC 13 → boots, display/Wi-Fi/BT/audio verified 2026-11-22 morning. Running now; boot59 stays the self-heal image |
 
 ### Modules on the tablet (`/root/mods/`), each with a rollback copy
 
