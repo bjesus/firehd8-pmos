@@ -54,6 +54,15 @@ ssh root@stockholm-aladdin '/root/usbkick.sh >/dev/null 2>&1; ssh root@10.42.0.2
 
 After a reboot, sleep ~70 s first, then retry `usbkick.sh` in a loop.
 
+### Direct route over Wi-Fi (preferred since 2026-11-22)
+
+Once Wi-Fi associates (see §8 "Wi-Fi association"), the tablet is reachable directly:
+`ssh -i ~/.ssh/id_tablet root@fdfc:d767:207::87b` (stable DHCPv6 address). This is
+faster than the relay and survives relay-side USB wedges. Lesson from the night: tablet
+commands that outlive a dropped USB link pin SSH channels on the relay's single
+authenticated connection; wrap remote commands in `timeout`, and never `nmcli con down`
+over a Wi-Fi session.
+
 ### Other routes
 
 * **Wi-Fi**: `fdfc:d767:207::87b` (wlan0 MAC pinned `00:08:22:38:88:fb`).
@@ -404,8 +413,9 @@ Each resume problem had its own cause; all three are handled:
    (Phosh behaviour); the power key turns it on with live vblanks.
 3. **USB gadget dead after resume** (musb-mtk recovers the PHY but never re-pulls D+):
    the sleep hook toggles `/sys/class/udc/musb-hdrc.2.auto/soft_connect` after resume,
-   and `/usr/local/sbin/usb-link-guard` (started by `start-phosh`) does the same whenever
-   the relay stops answering, rebooting after 6 min without contact as a last resort. A
+   and `/usr/local/sbin/usb-link-guard` (started by `start-phosh`) does the same whenever a
+   host is attached (`udc state == configured`) but the relay stops answering. It never
+   reboots (an earlier version did, and rebooted the tablet when the relay side wedged). A
    kernel-side fix would call `mtk_musb_restore_gadget_pullup()` from a system-resume hook.
 
 Verified: `loginctl suspend` + RTC wake + simulated power key (uinput, `rootfs/root/powerkey.py`)
@@ -441,8 +451,8 @@ sets `wifi.cloned-mac-address=preserve`, the per-profile
 `802-11-wireless.cloned-mac-address` overrides were cleared (`nmcli con modify <name>
 802-11-wireless.cloned-mac-address ""`), and the pinning line was removed from
 `start-phosh`. Association + DHCPv6 work immediately; DHCPv4 obtains a lease
-(192.168.8.157) — see TODO for an open question about the v4 address not staying on the
-interface, under investigation when the session ended.
+and IPv4 is applied within ~4 s (192.168.8.x, default route, DNS); internet reachable.
+An earlier run where the v4 address vanished was caused by overlapping tests, not a fault.
 
 ### Bluetooth — FIXED 2026-11-22 (night), `douglas-boot57.img`
 

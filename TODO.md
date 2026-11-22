@@ -565,15 +565,8 @@ pre-existing bug worth its own investigation.
 
 ---
 
-### 8. Wi-Fi IPv4 lease does not stay on the interface (open, 2026-11-22 night)
-Association and DHCPv6 work (fdfc:d767:207::87b). NetworkManager logs a DHCPv4 lease
-(192.168.8.157), "policy: set '⛰️' as default for IPv4 routing" and "Activation:
-successful", yet a minute later `ip -4 addr show wlan0` is empty, there is no IPv4
-default route, and `nmcli -f DHCP4 dev show wlan0` prints nothing, while NM still says
-"connected". NM logged no deactivation, no conflict, no renew/expire. Suspects: a short
-DHCP lease the driver fails to renew (kernel expires the address), or something flushing
-addresses on wlan0. An `ip -ts monitor address route dev wlan0` run was started to catch
-the deletion (`/tmp/ipmon.txt` on the tablet) when the relay link dropped.
+### 8. Wi-Fi IPv4 — resolved 2026-11-22: association fix (cloned-MAC) + lease applied in ~4 s; the
+earlier vanishing address was test interference. See HANDOFF.md.
 
 ## Session Notes / Traps (2026-11-21)
 
