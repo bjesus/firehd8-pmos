@@ -57,9 +57,10 @@ After a reboot, sleep ~70 s first, then retry `usbkick.sh` in a loop.
 ### Direct route over Wi-Fi (preferred since 2026-11-22)
 
 Once Wi-Fi associates (see §8 "Wi-Fi association"), the tablet is reachable directly:
-`ssh -i ~/.ssh/id_tablet root@192.168.8.<lease>` (check with `nmcli -g IP4.ADDRESS dev show
-wlan0` over the relay, or use `root@fdfc:d767:207::87b`, the stable DHCPv6 address; the v6
-path has been seen to stop answering after a resume while v4 kept working). This is
+`ssh -i ~/.ssh/id_tablet root@douglas.lan` (the router's DNS resolves the DHCP hostname;
+the IPv4 lease itself changes on every reconnect/resume, so do not hard-code it). The
+DHCPv6 address `fdfc:d767:207::87b` also works but has been seen to stop answering after
+a resume while v4 kept working. This is
 faster than the relay and survives relay-side USB wedges. `scp` does not work (no
 sftp-server on the tablet): stream with `cat file | ssh ... "cat > dest"`. Lesson from the night: tablet
 commands that outlive a dropped USB link pin SSH channels on the relay's single
@@ -422,7 +423,8 @@ Each resume problem had its own cause; all three are handled:
    kernel-side fix would call `mtk_musb_restore_gadget_pullup()` from a system-resume hook.
 
 Verified: `loginctl suspend` + RTC wake + simulated power key (uinput, `rootfs/root/powerkey.py`)
-→ display active with ~60 vblank/s, Wi-Fi re-powered, link back, audio OK, no oops.
+→ display active with ~60 vblank/s, Wi-Fi re-powered with a fresh IPv4 lease (boot59), BT
+powered and `bluetoothctl scan on` finds devices, link back, audio OK, no oops.
 The former `vblank wait timed out` WARNINGs on every blank are gone: `mtk_drm_crtc.c` now
 holds a DSI power reference from hw_init to hw_fini so the bridge's post_disable cannot
 gate the DSI clocks before the CRTC's final vblank wait (`mediatek-drm.ko` in
