@@ -122,6 +122,14 @@ reflash.**
 uploads `douglas-boot.img`, `douglas-mods.tar.gz` (in-tree display modules + out-of-tree
 modules, for `/root/mods/`), the `.config` and `SHA256SUMS`; a `v*` tag makes a Release.
 About 10 minutes per run. The first CI image was flashed and verified on 2026-11-22.
+Since the same morning a second job (`rootfs`, tags and manual runs) builds the whole OS:
+`tools/rootfs-inner.sh` runs in an aarch64 Alpine container under QEMU, installs
+`tools/rootfs-packages.txt`, overlays `rootfs/` (which now also holds the firmware, the
+udev/polkit/sudoers/phoc snippets, dconf defaults and every helper script), creates
+`user`/`douglas`, drops the kernel modules into `/root/mods` and writes a 3 GB ext4 image
+(`douglas-rootfs.img.gz`) that `douglas-init` grows on first boot. Install procedure in
+README.md. A tar backup of the hand-built rootfs that ran until then is at
+`/home/bjesus/douglas-port-backup/rootfs-p16-backup-2026-11-22.tar.gz`.
 Trap met the same morning: `rootfs/usr/local/sbin/start-phosh` carried an empty `else`
 branch (shell syntax error) that killed the session start after module load. `sh -n`
 every rootfs script before copying it to the tablet.
