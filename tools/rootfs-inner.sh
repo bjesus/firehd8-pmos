@@ -57,10 +57,18 @@ grep -q '^seat:.*user' "$R/etc/group" || { echo "user not in seat group"; exit 1
 du -sh "$R" | sed "s|$R|rootfs|"
 
 # ext4 image, populated without loop devices or root on the host; grows to the whole
-# partition on first boot (douglas-init runs resize2fs)
+# partition on first boot (douglas-init runs resize2fs). orphan_file/metadata_csum_seed
+# are turned off so the TWRP kernel (3.18) can still mount it.
 rm -f "$OUT/douglas-rootfs.img"
 truncate -s "$IMG_SIZE" "$OUT/douglas-rootfs.img"
-mke2fs -q -t ext4 -L douglas-root -m 1 -E lazy_itable_init=0,lazy_journal_init=0 -d "$R" "$OUT/douglas-rootfs.img"
+mke2fs -q -t ext4 -L douglas-root -m 1 -O ^orphan_file,^metadata_csum_seed -E lazy_itable_init=0,lazy_journal_init=0 -d "$R" "$OUT/douglas-rootfs.img"
+# mke2fs -d drops setuid/setgid bits (sudo, busybox-suid, ...): put them back
+find "$R" -xdev -type f -perm /6000 | while read -r f; do
+  printf 'set_inode_field %s mode 0%o\n' "${f#"$R"}" "0x$(stat -c %f "$f")"
+done > /tmp/suid.cmds
+cat /tmp/suid.cmds
+debugfs -w -f /tmp/suid.cmds "$OUT/douglas-rootfs.img" >/dev/null
+debugfs -R "stat /usr/bin/sudo" "$OUT/douglas-rootfs.img" 2>/dev/null | grep -q "Mode:  0*4755" || { echo "sudo is not setuid in the image"; exit 1; }
 e2fsck -fn "$OUT/douglas-rootfs.img" >/dev/null
 gzip -9 -n "$OUT/douglas-rootfs.img"
 ls -l "$OUT"
