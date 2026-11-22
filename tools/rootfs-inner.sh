@@ -48,6 +48,16 @@ chown -R 1000:1000 "$R/home/user"
 chmod 700 "$R/home/user"
 chroot "$R" dconf update
 
+# apk installing into --root under docker/QEMU loses the setuid/setgid bits; put back the
+# ones Alpine ships (list taken from a natively installed system)
+for f in /usr/bin/sudo /usr/bin/passwd /usr/bin/chage /usr/bin/chfn /usr/bin/chsh /usr/bin/gpasswd \
+         /usr/bin/expiry /usr/bin/pkexec /usr/lib/polkit-1/polkit-agent-helper-1; do
+  [ -e "$R$f" ] && chmod 4755 "$R$f"
+done
+chown root:messagebus "$R/usr/libexec/dbus-daemon-launch-helper" && chmod 4750 "$R/usr/libexec/dbus-daemon-launch-helper"
+chown root:shadow "$R/sbin/unix_chkpwd" && chmod 2755 "$R/sbin/unix_chkpwd"
+find "$R" -xdev -type f -perm /6000 | sed "s|^$R||"
+
 rm -rf "$R/var/cache/apk"/* "$R/root/.cache"
 # sanity checks that would otherwise only show up on the device
 stat -c "%U:%G %a %n" "$R/sbin/douglas-init" "$R/etc/phosh/phoc.ini" "$R/home/user" "$R/root/mods"

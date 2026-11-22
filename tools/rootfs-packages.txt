@@ -1,7 +1,7 @@
 # Alpine packages installed into the douglas root filesystem (one per line, # = comment).
 # Base
 alpine-baselayout alpine-keys alpine-release apk-tools busybox libc-utils
-e2fsprogs-extra sudo nano htop curl strace python3
+e2fsprogs-extra shadow sudo nano htop curl strace python3
 # Session, shell, desktop
 dbus elogind eudev seatd polkit-elogind upower iio-sensor-proxy
 phoc phosh squeekboard foot wlr-randr dconf
