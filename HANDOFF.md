@@ -134,6 +134,21 @@ Trap met the same morning: `rootfs/usr/local/sbin/start-phosh` carried an empty 
 branch (shell syntax error) that killed the session start after module load. `sh -n`
 every rootfs script before copying it to the tablet.
 
+**Incident 2026-11-22 midday (rootfs image).** The first CI rootfs was flashed to p16 and
+booted to Phosh, but `apk` installing into `--root` under docker/QEMU had dropped every
+setuid/setgid bit: no `sudo`, no D-Bus launch helper (so polkit and elogind could never be
+activated: no lock-screen unlock, no power menu, "Insufficient privileges" in nmcli), and
+no PAM helper. Root is locked by design, so from the shell there was no way to reboot or
+return to TWRP, and our DT had the PMIC long-press reset disabled: the only exit was to
+drain the battery. Lessons, all applied: (1) `tools/rootfs-inner.sh` restores Alpine's
+setuid set explicitly and the build fails unless `sudo`, `passwd`, `unix_chkpwd` and the
+dbus helper carry their modes; (2) the DT now enables the MT6323 long-press reset
+(`mediatek,long-press-mode = <1>`, 8 s, `douglas-boot60.img`) so a Power hold always
+resets the board; (3) never flash a rootfs you cannot log into as root over the USB link,
+install the test key from TWRP first (`/root/douglas-flash/flash-both.sh` on the relay
+does boot + rootfs + key in one go); (4) the ext4 image is built without
+`orphan_file`/`metadata_csum_seed` so TWRP's 3.18 kernel can mount it.
+
 ### Build
 
 ```sh
@@ -598,6 +613,7 @@ powering the consys chip off and unblocks it after resume; bluetoothd re-powers 
 | `douglas-boot57.img` | boot56 + BlueZ HCI bridge registers after STP ready → Bluetooth works |
 | `douglas-boot58.img` | unused duplicate of boot57 |
 | `douglas-boot59.img` | boot57 + `CONFIG_NETDEVICES`/`NET_CORE`/`TUN` → NM gets IPv4. **CURRENT**, also `/root/douglas-boot-good.img` |
+| `douglas-boot60.img` | boot59 + PMIC long-press hardware reset in the DT. Built, staged on the relay, flash pending (see incident note in §4) |
 | CI `douglas-boot.img` (GitHub Actions, run 44998827495) | same sources as boot59 built with Ubuntu GCC 13 → boots, display/Wi-Fi/BT/audio verified 2026-11-22 morning. Running now; boot59 stays the self-heal image |
 
 ### Modules on the tablet (`/root/mods/`), each with a rollback copy
