@@ -11,7 +11,7 @@ SRC=/work
 R=/rootfs
 OUT=/out
 
-apk add --no-cache -q e2fsprogs tar gzip
+apk add --no-cache -q e2fsprogs e2fsprogs-extra tar gzip
 mkdir -p "$R/etc/apk/keys" "$R/proc" "$R/sys" "$R/dev" "$R/run" "$R/tmp"
 cp /etc/apk/keys/* "$R/etc/apk/keys/"
 printf "%s\n" "$MIRROR/$ALPINE_BRANCH/main" "$MIRROR/$ALPINE_BRANCH/community" > "$R/etc/apk/repositories"
