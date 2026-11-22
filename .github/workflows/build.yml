@@ -1,0 +1,82 @@
+name: build boot image
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+    paths: ['kernel/**', 'douglas-initfs/**', 'douglas-alsa/*.c', 'douglas-alsa/Makefile', 'douglas-keys/*.c', 'douglas-keys/Makefile', 'mkboot_douglas.py', 'reference/vendor-dtb-tail.bin', '.github/workflows/build.yml']
+  workflow_dispatch:
+
+env:
+  KERNEL_REPO: https://github.com/aslater3/LibreEcho-Linux-6.1
+  KERNEL_BASE: 23721f56408fb4c4fe1a368abf06caa98edaecfa
+  CROSS: aarch64-linux-gnu-
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y --no-install-recommends gcc-aarch64-linux-gnu \
+            build-essential flex bison bc libssl-dev libelf-dev python3 cpio kmod rsync
+
+      - name: Fetch kernel base and apply the port
+        run: |
+          git clone -q --filter=blob:none "$KERNEL_REPO" kernel-src
+          cd kernel-src
+          git checkout -q "$KERNEL_BASE"
+          git config user.email ci@example.invalid; git config user.name ci
+          git am ../kernel/0001-douglas-port.patch
+          git log --oneline "$KERNEL_BASE"..HEAD
+
+      - name: Configure
+        run: |
+          mkdir -p out
+          cp kernel/douglas-6.1.config out/.config
+          # the initramfs (switch_root to the Alpine rootfs on mmcblk0p16) lives in this repo
+          sed -i "s|^CONFIG_INITRAMFS_SOURCE=.*|CONFIG_INITRAMFS_SOURCE=\"$GITHUB_WORKSPACE/douglas-initfs\"|" out/.config
+          chmod 755 douglas-initfs/init douglas-initfs/bin/busybox
+          make -C kernel-src O=$GITHUB_WORKSPACE/out ARCH=arm64 CROSS_COMPILE=$CROSS olddefconfig
+          grep -E '^CONFIG_(INITRAMFS_SOURCE|NETDEVICES|MTK_COMBO|LOCALVERSION)' out/.config
+
+      - name: Build kernel, DTBs and in-tree modules
+        run: |
+          # LOCALVERSION=+ reproduces the "6.1.178+" release string the rootfs scripts were written for
+          make -C kernel-src O=$GITHUB_WORKSPACE/out ARCH=arm64 CROSS_COMPILE=$CROSS LOCALVERSION=+ -j$(nproc) dtbs Image modules
+          make -C kernel-src O=$GITHUB_WORKSPACE/out ARCH=arm64 CROSS_COMPILE=$CROSS LOCALVERSION=+ INSTALL_MOD_PATH=$GITHUB_WORKSPACE/dist/mods INSTALL_MOD_STRIP=1 modules_install
+          cat out/include/config/kernel.release
+
+      - name: Build out-of-tree modules
+        run: |
+          for d in douglas-alsa douglas-keys; do
+            make -C $GITHUB_WORKSPACE/out M=$GITHUB_WORKSPACE/$d ARCH=arm64 CROSS_COMPILE=$CROSS LOCALVERSION=+ modules
+            cp $d/*.ko dist/mods/
+          done
+          ls -l dist/mods/*.ko
+
+      - name: Pack boot image
+        run: |
+          python3 mkboot_douglas.py out/arch/arm64/boot/Image dist/douglas-boot.img
+          cp out/.config dist/douglas-boot.config
+          cd dist && sha256sum douglas-boot.img > SHA256SUMS && cat SHA256SUMS
+          tar -C $GITHUB_WORKSPACE/dist -czf $GITHUB_WORKSPACE/dist/douglas-mods.tar.gz mods
+          rm -rf $GITHUB_WORKSPACE/dist/mods
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: douglas-boot-${{ github.sha }}
+          path: dist/
+          if-no-files-found: error
+
+      - name: Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" dist/douglas-boot.img dist/douglas-mods.tar.gz dist/douglas-boot.config dist/SHA256SUMS \
+            --title "douglas boot image ${GITHUB_REF_NAME}" \
+            --notes "Kernel boot image for the Amazon Fire HD 8 (2017, douglas). See README.md for what it is, what it needs, and how to flash it from TWRP."

@@ -57,9 +57,12 @@ def main():
 
     raw_image = open(image_path, "rb").read()
     gz_image = gzip.compress(raw_image, compresslevel=9, mtime=0)
+    # The DTB appended to the vendor kernel is reused verbatim: LK patches it with the
+    # hardware-specific tags (`atag,devinfo`, serial, mem) before jumping to the kernel.
+    here = os.path.dirname(os.path.abspath(__file__))
     dtb_tail = extract_vendor_dtb_tail(
-        "/tmp/opencode/boot.img",
-        "/home/bjesus/douglas-port-backup/vendor-dtb-tail.bin",
+        os.environ.get("DOUGLAS_VENDOR_BOOT", "/tmp/opencode/boot.img"),
+        os.environ.get("DOUGLAS_DTB_TAIL", os.path.join(here, "reference", "vendor-dtb-tail.bin")),
     )
     kernel_blob = gz_image + dtb_tail
     ramdisk_blob = make_empty_cpio_gz()

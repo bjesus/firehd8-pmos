@@ -17,7 +17,7 @@ if ! pgrep -x udevd >/dev/null; then
   udevadm settle
 fi
 
-M=/root/mods/lib/modules/6.1.178+/kernel
+M=/root/mods/lib/modules/$(uname -r)/kernel
 insmod $M/drivers/phy/mediatek/phy-mtk-mipi-dsi-drv.ko 2>/dev/null || true
 insmod $M/drivers/gpu/drm/panel/panel-amazon-douglas-nt35521.ko 2>/dev/null || true
 for f in fb_sys_fops syscopyarea sysfillrect sysimgblt cfbcopyarea cfbfillrect cfbimgblt; do insmod $M/drivers/video/fbdev/core/${f}.ko 2>/dev/null || true; done
