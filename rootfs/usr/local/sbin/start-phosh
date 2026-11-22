@@ -50,6 +50,7 @@ done
 if [ -e "$1" ]; then
   echo "start-phosh: DRM connector $1 present after $((i / 4))s" >&2
 else
+  echo "start-phosh: no DRM connector after 40 s, starting the session anyway" >&2
 fi
 udevadm trigger --subsystem-match=drm --action=add 2>/dev/null || true
 udevadm settle 2>/dev/null || true
