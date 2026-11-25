@@ -115,6 +115,40 @@ reflash.**
 
 ## 4. Build and flash
 
+### postmarketOS (the supported path since 2026-11-25)
+
+The port is packaged as a postmarketOS device, the way bjesus/mediapad-m3-lite-8-linux
+does it (its `docs/PUBLISHING-A-PORT.md` is the recipe). `pmaports/` is an overlay copied
+over an upstream pmaports checkout:
+
+| Package | Contents |
+|---|---|
+| `device/testing/device-amazon-douglas` | deviceinfo: Amazon LK boot.img parameters (base 0x40000000, kernel +0x80000, ramdisk +0x3480000, tags +0x8000000, page 2048, `bootopt=64S3,32N2,64N2`), vendor DTB appended (`mediatek/mt8163-douglas-lk`), `modules-initfs` = display stack |
+| `device/testing/linux-amazon-douglas` | kernel from the fork tag `6.1.178-douglas1` (pkgrel 100 so it beats any Nura binary), config with `CONFIG_INITRAMFS_SOURCE=""` and the board drivers as modules, the vendor DTB tail installed as `/boot/dtbs/mediatek/mt8163-douglas-lk.dtb` |
+| `device/testing/firmware-amazon-douglas` | the seven MT6625L/Goodix/MD32 blobs into `/lib/firmware` and `/etc/firmware` |
+| `device/testing/amazon-douglas-config` | systemd units for the WMT launcher and Wi-Fi power-on, `system-sleep/douglas` (consys off around s2idle, gadget re-pull), accelerometer udev rule, NetworkManager conf, tmpfiles (schedutil, 1.5 A charging), modules-load (`douglas_keys`, `douglas_battery`), `phoc.ini`, package repo key + list |
+
+Kernel-side prerequisites, both in the fork (branch `douglas`): the kernel now reads
+`/chosen/linux,initrd-start|end` from the FDT LK hands over before switching to its
+built-in DTB (commit "take the initrd location from the LK-provided FDT", verified with
+boot61), and the former out-of-tree modules live in-tree (`drivers/misc/douglas/`,
+`sound/soc/mediatek/mt8163/douglas-alsa.c`); BMA253 and JSA1212 are device-tree nodes on
+i2c2. Each kernel change: commit, tag `6.1.178-douglasN`, bump `_tag`/pkgrel/sha512 in the
+APKBUILD, regenerate `kernel/0001-douglas-port.patch`.
+
+`.github/workflows/pmos.yml` runs pmbootstrap 3.12.1 on the runner (pinned apk.static
+3.0.9 via `tools/pmb`, upstream pmaports pinned to `PMAPORTS_COMMIT`), builds the four
+packages, `pmbootstrap install --password douglas` + `export`, and uploads
+`douglas-pmos-boot.img` + `douglas-pmos-rootfs.img.gz`; tags make a release. With the
+`APK_SIGNING_KEY` and `PUSH_TOKEN` secrets set it also publishes the packages to
+`bjesus/pmos-packages/amazon-douglas/edge`, which the image trusts, so `apk upgrade` on the
+device pulls kernel/driver updates. Flashing from TWRP: boot.img → `mmcblk0p5`, rootfs
+image → `mmcblk0p16` (pmOS's initramfs finds the root by label, the image carries its own
+boot+root partition table). The hand-rolled Alpine image (`tools/rootfs-inner.sh`,
+`build.yml`) is kept as a manual-only fallback.
+
+### Legacy: hand-rolled Alpine image
+
 ### Zero-setup: GitHub Actions
 
 `.github/workflows/build.yml` builds the same thing from the repo alone (base commit +
