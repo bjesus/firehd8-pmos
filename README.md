@@ -80,6 +80,11 @@ is on from the first boot; the hostname is `douglas`, so `ssh user@douglas.lan` 
 `ssh user@douglas` usually works once the tablet is on Wi-Fi. Change the password with
 `passwd` after the first login. There is no root password; use `sudo`.
 
+**Always a way out:** holding Power for about 8 seconds resets the tablet in hardware
+(PMIC), whatever the software is doing; hold Power + Volume Down right after to reach
+TWRP. If a flashed kernel fails to boot three times in a row, the initramfs reflashes the
+copy kept at `/root/douglas-boot-good.img` and reboots.
+
 ## Installing from TWRP
 
 Prerequisites: a Fire HD 8 2017 with the bootloader unlocked through

@@ -4,7 +4,7 @@ Companion to **`TODO.md`**, which holds the per-task, register-level detail. Thi
 file is the practical entry point: how to reach the device, how to build and
 flash, how to debug it, what works today, and what is left.
 
-Written 2026-11-21, updated through the night of 2026-11-22. Current image: **`douglas-boot59.img`**, kernel `#31`.
+Written 2026-11-21, updated through 2026-11-25. Current image: **`douglas-boot60.img`**, kernel `#32`, on the CI-built Alpine rootfs.
 
 ---
 
@@ -148,6 +148,20 @@ resets the board; (3) never flash a rootfs you cannot log into as root over the 
 install the test key from TWRP first (`/root/douglas-flash/flash-both.sh` on the relay
 does boot + rootfs + key in one go); (4) the ext4 image is built without
 `orphan_file`/`metadata_csum_seed` so TWRP's 3.18 kernel can mount it.
+
+**Resolved 2026-11-25 evening.** Getting back to TWRP took three days: LK boots the kernel
+by itself as soon as a drained battery passes its threshold, so the key combination has
+to be held from the moment the charger is plugged in. `douglas-boot60.img` (PMIC
+long-press reset) went on first, then the fixed CI rootfs (run 45014477532) with
+recovery aids written from TWRP before the first boot: root ssh key (`id_tablet`), root
+password `douglas` (**this device only**, the release image keeps root locked), the home
+Wi-Fi profile, and the dead-man switch re-armed at 240 s, disarmed over Wi-Fi 40 s after
+boot once root login, `sudo`, polkit, elogind, Wi-Fi IPv4 and Bluetooth had checked out.
+`/root/douglas-boot-good.img` on the device is boot60. The rootfs build now also ships
+its own kernel as that self-heal image. Flashing from this laptop: `adb` is
+`/opt/android-sdk/platform-tools/adb`; the tablet's USB network needs
+`sudo ip link set <enp0s20f0uN> up && sudo ip addr add 10.42.0.1/24 dev <enp0s20f0uN>`.
+Password SSH without sshpass: `expect` (see `.work/` notes).
 
 ### Build
 
@@ -613,7 +627,7 @@ powering the consys chip off and unblocks it after resume; bluetoothd re-powers 
 | `douglas-boot57.img` | boot56 + BlueZ HCI bridge registers after STP ready → Bluetooth works |
 | `douglas-boot58.img` | unused duplicate of boot57 |
 | `douglas-boot59.img` | boot57 + `CONFIG_NETDEVICES`/`NET_CORE`/`TUN` → NM gets IPv4. **CURRENT**, also `/root/douglas-boot-good.img` |
-| `douglas-boot60.img` | boot59 + PMIC long-press hardware reset in the DT. Built, staged on the relay, flash pending (see incident note in §4) |
+| `douglas-boot60.img` | boot59 + PMIC long-press hardware reset in the DT. **CURRENT** since 2026-11-25, also `/root/douglas-boot-good.img` |
 | CI `douglas-boot.img` (GitHub Actions, run 44998827495) | same sources as boot59 built with Ubuntu GCC 13 → boots, display/Wi-Fi/BT/audio verified 2026-11-22 morning. Running now; boot59 stays the self-heal image |
 
 ### Modules on the tablet (`/root/mods/`), each with a rollback copy

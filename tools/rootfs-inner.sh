@@ -29,6 +29,8 @@ mkdir -p "$R/etc/firmware" && cp "$R"/lib/firmware/* "$R/etc/firmware/"
 # kernel modules loaded by start-phosh / init-tier1.sh
 rm -rf "$R/root/mods" && cp -a "$SRC/dist-kernel/mods" "$R/root/mods"
 rm -f "$R"/root/*.log
+# self-heal fallback used by the initramfs after three failed boots: this build's own kernel
+cp "$SRC/dist/douglas-boot.img" "$R/root/douglas-boot-good.img"
 
 echo douglas > "$R/etc/hostname"
 echo "127.0.0.1 localhost douglas" > "$R/etc/hosts"
