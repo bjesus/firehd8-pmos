@@ -54,6 +54,9 @@ jobs:
           # binaries; a newer one makes pmbootstrap rebuild dependencies under emulation.
           git checkout "$PMAPORTS_COMMIT" || git checkout "$(git rev-list -n1 --before='2 days ago' refs/remotes/origin/master)"
           git log --oneline -1
+          # upstream keeps the old downstream-kernel port under device/archived; pmbootstrap
+          # refuses duplicate package names, so drop those before overlaying ours
+          rm -rf device/archived/device-amazon-douglas device/archived/linux-amazon-douglas
           cp -r "$GITHUB_WORKSPACE/pmaports/." .
           git status --short | head -40
 
