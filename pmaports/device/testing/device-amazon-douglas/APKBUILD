@@ -1,0 +1,35 @@
+# Reference: <https://postmarketos.org/devicepkg>
+# Maintainer: Yoav Moshe <bjesus@users.noreply.github.com>
+pkgname=device-amazon-douglas
+pkgdesc="Amazon Fire HD 8 (2017)"
+pkgver=1
+pkgrel=0
+url="https://github.com/bjesus/firehd8-pmos"
+license="MIT"
+arch="aarch64"
+options="!check !archcheck"
+depends="
+	amazon-douglas-config
+	android-tools-mkbootimg
+	firmware-amazon-douglas
+	linux-amazon-douglas
+	postmarketos-base
+"
+makedepends="devicepkg-dev"
+source="
+	deviceinfo
+	modules-initfs
+"
+
+build() {
+	devicepkg_build $startdir $pkgname
+}
+
+package() {
+	devicepkg_package $startdir $pkgname
+}
+
+sha512sums="
+3da7eb6d90b070fc80f88e99cd3737fc0f321f1cad46afc5be0a820f088f4bce6a89f1bfd91c9bfe5ff02f44e3e2e88921aa1cbbde4f794dd2bc458b3bc0a9c4  deviceinfo
+8fab76d1e320157d3fae122ca3e1fc03518751f8ac95b26b5e8524ce73dd4311608e336dc187a3d9dfee6955f988f527fe2e9676c1b2e5e07892c0dfe8b36d2f  modules-initfs
+"

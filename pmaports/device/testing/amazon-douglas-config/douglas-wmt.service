@@ -1,0 +1,14 @@
+[Unit]
+Description=MT6625L connectivity firmware launcher (WMT patch handshake)
+After=local-fs.target systemd-udevd.service
+Before=NetworkManager.service bluetooth.service
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sh -c 'i=0; while [ ! -c /dev/stpwmt ] && [ $i -lt 60 ]; do sleep 1; i=$((i+1)); done; [ -c /dev/stpwmt ]'
+ExecStart=/usr/bin/python3 /usr/libexec/douglas/wmt-launcher.py
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

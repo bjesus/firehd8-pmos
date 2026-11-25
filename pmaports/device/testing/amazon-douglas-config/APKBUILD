@@ -1,0 +1,75 @@
+# Maintainer: Yoav Moshe <bjesus@users.noreply.github.com>
+pkgname=amazon-douglas-config
+pkgdesc="Amazon Fire HD 8 (2017) configuration: Wi-Fi/BT bring-up, sleep hook, sensors, defaults"
+pkgver=1
+pkgrel=0
+url="https://github.com/bjesus/firehd8-pmos"
+license="MIT"
+arch="noarch"
+options="!check"
+depends="
+	bluez
+	iio-sensor-proxy
+	iw
+	networkmanager-wifi
+	python3
+"
+source="
+	wmt-launcher.py
+	douglas-wifi-on.sh
+	douglas-wmt.service
+	douglas-wifi.service
+	douglas-sleep.sh
+	99-douglas-accel.rules
+	20-douglas-nm.conf
+	douglas-tmpfiles.conf
+	douglas-modules.conf
+	phoc.ini
+	bjesus-pmos.rsa.pub
+	amazon-douglas.list
+"
+
+package() {
+	# MT6625L connectivity: userspace side of the vendor WMT stack (patch
+	# download handshake on /dev/stpwmt), then power the Wi-Fi function on.
+	install -Dm755 "$srcdir"/wmt-launcher.py "$pkgdir"/usr/libexec/douglas/wmt-launcher.py
+	install -Dm755 "$srcdir"/douglas-wifi-on.sh "$pkgdir"/usr/libexec/douglas/douglas-wifi-on.sh
+	install -Dm644 "$srcdir"/douglas-wmt.service "$pkgdir"/usr/lib/systemd/system/douglas-wmt.service
+	install -Dm644 "$srcdir"/douglas-wifi.service "$pkgdir"/usr/lib/systemd/system/douglas-wifi.service
+	mkdir -p "$pkgdir"/usr/lib/systemd/system/multi-user.target.wants
+	ln -s ../douglas-wmt.service "$pkgdir"/usr/lib/systemd/system/multi-user.target.wants/douglas-wmt.service
+	ln -s ../douglas-wifi.service "$pkgdir"/usr/lib/systemd/system/multi-user.target.wants/douglas-wifi.service
+
+	# The consys chip does not survive s2idle: power it off around sleep;
+	# re-pull the USB gadget after resume.
+	install -Dm755 "$srcdir"/douglas-sleep.sh "$pkgdir"/usr/lib/systemd/system-sleep/douglas
+
+	# BMA253 is mounted with Y inverted
+	install -Dm644 "$srcdir"/99-douglas-accel.rules "$pkgdir"/usr/lib/udev/rules.d/99-douglas-accel.rules
+	# the Wi-Fi driver cannot change its MAC; ACD confuses it
+	install -Dm644 "$srcdir"/20-douglas-nm.conf "$pkgdir"/usr/lib/NetworkManager/conf.d/20-douglas.conf
+	# schedutil governor, 1.5 A charging (kernel defaults are conservative on purpose)
+	install -Dm644 "$srcdir"/douglas-tmpfiles.conf "$pkgdir"/usr/lib/tmpfiles.d/douglas.conf
+	# board drivers that are not device-tree bound
+	install -Dm644 "$srcdir"/douglas-modules.conf "$pkgdir"/usr/lib/modules-load.d/douglas.conf
+	install -Dm644 "$srcdir"/phoc.ini "$pkgdir"/etc/phosh/phoc.ini
+
+	# Trust and enable the port's package repository (kernel and driver updates)
+	install -Dm644 "$srcdir"/bjesus-pmos.rsa.pub "$pkgdir"/etc/apk/keys/bjesus-pmos.rsa.pub
+	install -Dm644 "$srcdir"/amazon-douglas.list "$pkgdir"/etc/apk/repositories.d/amazon-douglas.list
+}
+
+sha512sums="
+b4e4f52eaa9045546516acf04325a644f476cf4e970e176f6f9420771a48ffae7d3f9d1ee018b8af62c04e916c51b036f80048bc1838aaf311803be1fb4b0758  wmt-launcher.py
+fd965d5c60a74e4456a5f3621f920f2b87646022eb9f3bc2b85680c366c8129555c063b851f4c202345f2e1634d30c28b57fe2fd0f70d7e6eeff9bf2ae5ce57f  douglas-wifi-on.sh
+29c05c95aafee7ad668d4ffea47913faa68d4aea068a074012195e08aba9398258f1edf74e3f2679592917ed6259f371dffed9da0f550fa4037f1ebde48c2569  douglas-wmt.service
+bf5bcec7df55c373295d68861a14d7d7902ae71779ed78ad2e6c023c1a6203cb49a9251b2d9c1ffc7a16039c3868f7d29678795951f7423a03916870af1aeef0  douglas-wifi.service
+4575f7ca8aa19f6aca621cbfc6b2223586865a52a530581be6ab627ac76d0ba33cafc96637c5bc9f0ada8bbe3219465f2028590a7c6995663efd03ec3ec3052b  douglas-sleep.sh
+a5f7be2efcd75ff1b181e5e4d97f944129cc99fac999c7be39ab10a5497fb2e87b5f57600e219f739af4d95651db65b66d8422ff1bca84b9504092fe868c6e24  99-douglas-accel.rules
+86c46cfbb3b13c054ba10621f115643a84aaaeeb9b7f9f55bc8c0089c0361ee972fa3bd0e6d0b95dc79c9e988393f3b66081f60a6a3625e15fb95c19b78e3880  20-douglas-nm.conf
+b9e4cff5fc8dcc92487974f0ac877b725465ce0f60124d30e5cc02cf53b0b88e4f33a50505a7a0c8ba8e498373329f18b96c41fc952ea73925ebe24285e19dbc  douglas-tmpfiles.conf
+a597aea10998f1bb3d2af4c273a67c9288085eabf3e6c38081f5980bd28eaf2851a624bb29cc74249f6cc9a4f5558579fcdcccf0a405c2a5aa68fd3a541efc56  douglas-modules.conf
+66c0f6c295636007e26de25aa730c0d0c5204b203894d14d38b99938865f830c7ae92ad1e1614925ebb68920810e8a187d4fd1c67fd3c5b8b5f856974f87eee9  phoc.ini
+47215ac8215a6bf76b303c755968951423847a22714aed7d0c68e82fe63113677546a26d5de40454afb5019e0cb6efc18473a1060d98db341f474d932c28d821  bjesus-pmos.rsa.pub
+704e33f69c5ef8bd7d40a2db1043cb5fddc95f7dd77da65def9406e5f2d7cbd576a601d1bde9051dde93f76810feae78dd4901090e23c822b336f04be4010fea  amazon-douglas.list
+"

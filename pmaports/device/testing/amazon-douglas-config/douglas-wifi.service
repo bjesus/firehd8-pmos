@@ -1,0 +1,14 @@
+[Unit]
+Description=Power on the MT6625L Wi-Fi function
+After=douglas-wmt.service
+Requires=douglas-wmt.service
+Before=NetworkManager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/douglas/douglas-wifi-on.sh
+RemainAfterExit=yes
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

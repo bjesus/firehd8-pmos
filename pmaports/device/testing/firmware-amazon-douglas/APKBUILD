@@ -1,0 +1,38 @@
+# Maintainer: Yoav Moshe <bjesus@users.noreply.github.com>
+pkgname=firmware-amazon-douglas
+pkgver=1
+pkgrel=0
+pkgdesc="Firmware for the Amazon Fire HD 8 (2017): MT6625L Wi-Fi/Bluetooth, Goodix touch, MD32"
+url="https://github.com/bjesus/firehd8-pmos"
+arch="noarch"
+license="proprietary"
+options="!check !strip !archcheck !tracedeps"
+# Taken from the tablet's own Amazon firmware; the same files are shipped by
+# https://github.com/aslater3/LibreEcho-mt8163-connectivity and the Amazon GPL
+# kernel sources. The vendor connectivity stack looks in both directories.
+source="
+	WMT_SOC.cfg
+	ROMv2_lm_patch_1_0_hdr.bin
+	ROMv2_lm_patch_1_1_hdr.bin
+	WIFI_RAM_CODE_8163
+	gt9xx_fw.bin
+	md32_d.bin
+	md32_p.bin
+"
+
+package() {
+	for f in $source; do
+		install -Dm644 "$srcdir/$f" "$pkgdir/lib/firmware/$f"
+		install -Dm644 "$srcdir/$f" "$pkgdir/etc/firmware/$f"
+	done
+}
+
+sha512sums="
+8a65c860cfd2f784e58f631bca5b17688f203237ef1bf9342b053aafacc3ccc27ae8707cfd62641c3dfec09f6ded91df93c49d91de87d6b256f7e3d6fae16a4b  WMT_SOC.cfg
+56ae79ca67e272b2c810a6eadf0ada497a586f1e7691ee84f742b9dd9517657ef8f19887de6cd017bdfacf4eeeed9c974d451d7fdbc5544ebe8ceb990c7936b1  ROMv2_lm_patch_1_0_hdr.bin
+a15972333ffe2c68bea5391eb2cadd5c2c49218d983edc629d4d84356e27d1995177904a4a67c0eabe1c96f3c56031d0046b5488f46e34ae272d13c3b2600b5e  ROMv2_lm_patch_1_1_hdr.bin
+3ebbc0fbc2c714c09dc3dee00bf851212527a5b81b9d0e5f2c9ffbe817b6d687d9d901b50bba9b2c6b2a3bab8b3b983720d1970595789d69711d8b22df0307d4  WIFI_RAM_CODE_8163
+af5db26c4d89dd43c4e05d9aa86063d0a2b799b245625f5904280dbdff59819a32d2d4ac7a1bef554c10009c99e8043c1ed1e3da5e6ef453adcbd68453859021  gt9xx_fw.bin
+8de3f5d329f300dc31b49b6fd3a22ec099913db71d2a1e09c46b95fe1f8288394c1b140254f9995ea716f7e52d304954da05a3416f74698ef9614dfa3f7073db  md32_d.bin
+c3c38ce29e19fdc325a6b69dae8355156b7d689b446f450dc59b1af312ac5af473417c9d5288d2770a939d2ac9dcd7b96c3b64dd43c3de1b22cc99b5566ec19a  md32_p.bin
+"

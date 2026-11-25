@@ -1,0 +1,37 @@
+#!/usr/bin/python
+"""
+pmbootstrap wrapper that keeps the pinned apk.static (3.0.9) in place.
+
+apk-tools 3.0.10 (Alpine edge, 2026-11-20) fails to commit files through the
+merged /usr/sbin symlink ("failed to commit usr/sbin/init: No such file or
+directory", alpine/apk-tools#11231), which breaks `pmbootstrap install` for
+systemd images. pmbootstrap re-downloads the newest apk-tools-static whenever
+it creates a chroot, so this wrapper skips that step while a working
+apk.static already exists in the work directory.
+
+Usage: tools/pmb <pmbootstrap arguments>
+Drop this wrapper once Alpine ships a fixed apk-tools (>= 3.0.11).
+Copied from bjesus/mediapad-m3-lite-8-linux.
+"""
+import re
+import sys
+
+import pmb.helpers.apk_static as apk_static
+from pmb import main
+from pmb.core.context import get_context
+
+_orig_init = apk_static.init
+
+
+def _init_keep_existing() -> None:
+    target = get_context().config.work / "apk.static"
+    if target.exists():
+        return
+    _orig_init()
+
+
+apk_static.init = _init_keep_existing
+
+if __name__ == "__main__":
+    sys.argv[0] = re.sub(r"(-script\.pyw|\.exe)?$", "", sys.argv[0])
+    sys.exit(main())

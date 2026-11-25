@@ -1,0 +1,195 @@
+name: Build postmarketOS image
+
+# Builds the port as a postmarketOS device: packages from the pmaports/ overlay,
+# then a flashable rootfs image + boot.img with pmbootstrap. Modelled on
+# bjesus/mediapad-m3-lite-8-linux (docs/PUBLISHING-A-PORT.md there).
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+    paths: ["pmaports/**", "tools/**", "keys/**", ".github/workflows/pmos.yml"]
+  workflow_dispatch:
+    inputs:
+      password:
+        description: "Login password baked into the image"
+        default: "douglas"
+
+permissions:
+  contents: write
+
+env:
+  DEVICE: amazon-douglas
+  WORK: /home/runner/pmbootstrap
+  PMAPORTS_COMMIT: 917fefaba5d2e221473acd96875b0bef8ed43973   # upstream pmaports base (2026-11-23)
+
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Install host dependencies
+        run: |
+          sudo apt-get update
+          # no distro qemu-user-static/binfmt here: pmbootstrap registers its own binfmt_misc
+          # handlers (with the F flag) and a distro registration gets in the way of that
+          sudo apt-get install -y --no-install-recommends python3-pip git openssl sudo xz-utils rsync
+          sudo modprobe binfmt_misc || true
+          mount | grep -q binfmt_misc || sudo mount -t binfmt_misc binfmt_misc /proc/sys/fs/binfmt_misc
+          pip3 install --break-system-packages "git+https://gitlab.postmarketos.org/postmarketOS/pmbootstrap.git@3.12.1"
+          pmbootstrap --version
+
+      - name: Fetch pmaports and apply overlay
+        run: |
+          git clone https://gitlab.postmarketos.org/postmarketOS/pmaports.git "$WORK-pmaports"
+          cd "$WORK-pmaports"
+          # A tree a couple of days behind main only resolves to already-published
+          # binaries; a newer one makes pmbootstrap rebuild dependencies under emulation.
+          git checkout "$PMAPORTS_COMMIT" || git checkout "$(git rev-list -n1 --before='2 days ago' refs/remotes/origin/master)"
+          git log --oneline -1
+          cp -r "$GITHUB_WORKSPACE/pmaports/." .
+          git status --short | head -40
+
+      - name: Restore package and compiler caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.WORK }}/packages
+            ${{ env.WORK }}/config_abuild
+            ${{ env.WORK }}/cache_ccache_aarch64
+            ${{ env.WORK }}/cache_ccache_x86_64
+            ${{ env.WORK }}/cache_distfiles
+          key: pmb-v1-${{ runner.os }}-${{ hashFiles('pmaports/**') }}
+          restore-keys: |
+            pmb-v1-${{ runner.os }}-
+
+      - name: Configure pmbootstrap
+        run: |
+          mkdir -p ~/.config
+          cat > ~/.config/pmbootstrap_v3.cfg <<CFG
+          [pmbootstrap]
+          aports = $WORK-pmaports
+          work = $WORK
+          device = $DEVICE
+          ui = phosh
+          ui_extras = False
+          user = user
+          hostname = douglas
+          timezone = UTC
+          locale = en_US.UTF-8
+          ssh_keys = False
+          sudo_timer = False
+          auto_zap_misconfigured_chroots = yes
+          is_default_channel = False
+          extra_packages = none
+          service_manager = systemd
+          build_pkgs_on_install = False
+          jobs = 4
+          [providers]
+          postmarketos-base-ui-audio-backend = pipewire
+          [mirrors]
+          CFG
+          mkdir -p "$WORK" && echo 8 > "$WORK/version"
+          # apk-tools 3.0.10 cannot commit files through the merged-/usr symlinks; pin 3.0.9
+          if curl -sSfL -o /tmp/apk-tools-static.apk \
+               https://dl-cdn.alpinelinux.org/alpine/edge/main/x86_64/apk-tools-static-3.0.9-r0.apk; then
+            tar -xzf /tmp/apk-tools-static.apk -C /tmp sbin/apk.static 2>/dev/null || tar -xzf /tmp/apk-tools-static.apk -C /tmp
+            install -m755 "$(find /tmp -name apk.static -type f | head -1)" "$WORK/apk.static"
+          else
+            curl -sSfL -o "$WORK/apk.static" https://raw.githubusercontent.com/bjesus/pmos-packages/main/tools/apk.static-3.0.9-x86_64
+            chmod 755 "$WORK/apk.static"
+          fi
+          "$WORK/apk.static" --version
+          pmbootstrap config
+          sudo -n true
+
+      - name: Install package signing key
+        env:
+          APK_SIGNING_KEY: ${{ secrets.APK_SIGNING_KEY }}
+        run: |
+          if [ -n "$APK_SIGNING_KEY" ]; then
+            mkdir -p "$WORK/config_abuild"
+            printf '%s\n' "$APK_SIGNING_KEY" > "$WORK/config_abuild/bjesus-pmos.rsa"
+            chmod 600 "$WORK/config_abuild/bjesus-pmos.rsa"
+            cp keys/bjesus-pmos.rsa.pub "$WORK/config_abuild/bjesus-pmos.rsa.pub"
+            echo 'PACKAGER_PRIVKEY="/home/pmos/.abuild/bjesus-pmos.rsa"' > "$WORK/config_abuild/abuild.conf"
+            sudo chown -R 12345:12345 "$WORK/config_abuild"
+            mkdir -p "$WORK/config_apk_keys"
+            cp keys/bjesus-pmos.rsa.pub "$WORK/config_apk_keys/bjesus-pmos.rsa.pub"
+            echo "signing with bjesus-pmos.rsa"
+          else
+            echo "APK_SIGNING_KEY not set: packages get a throw-away key"
+          fi
+
+      - name: Build packages
+        run: |
+          python3 "$GITHUB_WORKSPACE/tools/pmb" --details-to-stdout build --arch aarch64 linux-amazon-douglas
+          python3 "$GITHUB_WORKSPACE/tools/pmb" --details-to-stdout build --arch aarch64 firmware-amazon-douglas amazon-douglas-config device-amazon-douglas
+
+      - name: Build rootfs image
+        run: |
+          for attempt in 1 2 3; do
+            python3 "$GITHUB_WORKSPACE/tools/pmb" --details-to-stdout install --password "${{ github.event.inputs.password || 'douglas' }}" && break
+            echo "install attempt $attempt failed, refreshing package index"
+            python3 "$GITHUB_WORKSPACE/tools/pmb" update || true
+            [ "$attempt" = 3 ] && exit 1
+          done
+          mkdir -p out
+          python3 "$GITHUB_WORKSPACE/tools/pmb" export out/export
+          ls -la out/export/
+
+      - name: Collect artifacts
+        run: |
+          set -e
+          cp -L out/export/boot.img out/douglas-pmos-boot.img
+          cp -L out/export/${DEVICE}.img out/douglas-pmos-rootfs.img
+          # flashed with dd from TWRP: plain image, gzip-compressed
+          gzip -9 -n out/douglas-pmos-rootfs.img
+          cd out && sha256sum douglas-pmos-boot.img douglas-pmos-rootfs.img.gz > SHA256SUMS && cat SHA256SUMS
+          ls -la
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: amazon-douglas-postmarketos
+          path: |
+            out/douglas-pmos-boot.img
+            out/douglas-pmos-rootfs.img.gz
+            out/SHA256SUMS
+          retention-days: 7
+
+      - name: Publish packages to bjesus/pmos-packages
+        if: github.event_name != 'pull_request'
+        env:
+          PUSH_TOKEN: ${{ secrets.PUSH_TOKEN }}
+          APK_SIGNING_KEY: ${{ secrets.APK_SIGNING_KEY }}
+        run: |
+          if [ -z "$PUSH_TOKEN" ] || [ -z "$APK_SIGNING_KEY" ]; then
+            echo "PUSH_TOKEN / APK_SIGNING_KEY not set: not publishing"; exit 0
+          fi
+          git clone "https://x-access-token:${PUSH_TOKEN}@github.com/bjesus/pmos-packages.git" pkgrepo
+          mkdir -p pkgrepo/${DEVICE}/edge/aarch64 pkgrepo/keys
+          rsync -a --delete --include='*.apk' --include='APKINDEX.tar.gz' --exclude='*' \
+            "$WORK/packages/edge/aarch64/" pkgrepo/${DEVICE}/edge/aarch64/
+          cp keys/*.rsa.pub pkgrepo/keys/
+          cd pkgrepo
+          git config user.name "firehd8-pmos CI"
+          git config user.email "bjesus@users.noreply.github.com"
+          git add -A
+          git commit -m "${DEVICE}: packages from bjesus/firehd8-pmos@${GITHUB_SHA::12}" || exit 0
+          git push
+
+      - name: Release (tags only)
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" --title "douglas ${GITHUB_REF_NAME}" \
+            --notes "postmarketOS image for the Amazon Fire HD 8 (2017, douglas). See README.md for what works and how to flash from TWRP. Login: user / douglas." \
+            out/douglas-pmos-boot.img out/douglas-pmos-rootfs.img.gz out/SHA256SUMS

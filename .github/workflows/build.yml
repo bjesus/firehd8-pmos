@@ -1,10 +1,7 @@
 name: build images
 
 on:
-  push:
-    branches: [main]
-    tags: ["v*"]
-    paths: ["kernel/**", "douglas-initfs/**", "douglas-alsa/*.c", "douglas-alsa/Makefile", "douglas-keys/*.c", "douglas-keys/Makefile", "mkboot_douglas.py", "reference/vendor-dtb-tail.bin", ".github/workflows/build.yml"]
+  # legacy hand-rolled Alpine image; the postmarketOS build (pmos.yml) is the supported path
   workflow_dispatch:
     inputs:
       rootfs:

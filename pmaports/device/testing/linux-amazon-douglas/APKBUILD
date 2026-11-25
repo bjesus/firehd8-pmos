@@ -1,0 +1,77 @@
+# Maintainer: Yoav Moshe <bjesus@users.noreply.github.com>
+_flavor="amazon-douglas"
+pkgname=linux-amazon-douglas
+pkgver=6.1.178
+pkgrel=100
+pkgdesc="Mainline-based kernel for the Amazon Fire HD 8 (2017, douglas), MT8163"
+arch="aarch64"
+_carch="arm64"
+url="https://github.com/bjesus/LibreEcho-Linux-6.1"
+# LibreEcho-Linux-6.1 (aslater3) with the douglas port on top: branch douglas, tag $_tag.
+# The same changes are kept as kernel/0001-douglas-port.patch in bjesus/firehd8-pmos.
+license="GPL-2.0-only"
+options="!strip !check !tracedeps pmb:cross-native"
+makedepends="
+	bash
+	bc
+	bison
+	elfutils-dev
+	findutils
+	flex
+	gmp-dev
+	linux-headers
+	mpc1-dev
+	mpfr-dev
+	openssl-dev
+	pahole
+	perl
+	postmarketos-installkernel
+	python3
+	zstd
+"
+_tag="$pkgver-douglas1"
+_config="config-$_flavor.$arch"
+source="
+	$pkgname-$_tag.tar.gz::$url/archive/refs/tags/$_tag.tar.gz
+	$_config
+	mt8163-douglas-lk.dtb
+"
+builddir="$srcdir/LibreEcho-Linux-6.1-$_tag"
+
+prepare() {
+	default_prepare
+	cp "$srcdir/$_config" .config
+}
+
+build() {
+	unset LDFLAGS
+	make ARCH="$_carch" \
+		KBUILD_BUILD_VERSION="$((pkgrel + 1))-postmarketOS"
+}
+
+package() {
+	mkdir -p "$pkgdir"/boot
+	make zinstall modules_install dtbs_install \
+		ARCH="$_carch" \
+		INSTALL_PATH="$pkgdir"/boot \
+		INSTALL_MOD_PATH="$pkgdir"/usr \
+		INSTALL_MOD_STRIP=1 \
+		INSTALL_DTBS_PATH="$pkgdir"/boot/dtbs
+
+	# The vendor DTB the Amazon LK expects appended to the kernel. LK writes
+	# /chosen (ramdisk address, atags) into it; the kernel reads the ramdisk
+	# location from there and otherwise boots from its built-in device tree.
+	install -Dm644 "$srcdir"/mt8163-douglas-lk.dtb \
+		"$pkgdir"/boot/dtbs/mediatek/mt8163-douglas-lk.dtb
+
+	rm -f "$pkgdir"/usr/lib/modules/*/build "$pkgdir"/usr/lib/modules/*/source
+
+	install -D "$builddir"/include/config/kernel.release \
+		"$pkgdir"/usr/share/kernel/$_flavor/kernel.release
+}
+
+sha512sums="
+91fbe6f1925aa728aa7e2c2542133d768cfc1fc39d654e8673d5fb3225fe901c12bde4600288cbbdb9f9e09b8d89ab097d7407ba67e5a99c9c0e7df624101edd  linux-amazon-douglas-6.1.178-douglas1.tar.gz
+e485baaae1a7988c2ace427cbcfa9ff58881d48d7dd9b84d8526ad8716351bec57084e5fce924175ab947907547cfc0d4d2b834ee09b53f1f3e3fdffeb91b275  config-amazon-douglas.aarch64
+69f11f157bb17f32fa649ed1a0aa0fdf30027147408335d33e4cdde898fd12825445d9d2f67b4df6b52fec2e744ce5979393f9b95de2732d8974bbe22e9c4389  mt8163-douglas-lk.dtb
+"
