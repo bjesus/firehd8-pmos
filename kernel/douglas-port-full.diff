@@ -1315,16 +1315,65 @@ index 29a8e444d..f55c4685f 100644
  }
  
 diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
-index 44c4d79bd..a690aef3c 100644
+index 44c4d79bd..c77479cee 100644
 --- a/arch/arm64/kernel/setup.c
 +++ b/arch/arm64/kernel/setup.c
-@@ -178,16 +178,33 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
+@@ -13,6 +13,7 @@
+ #include <linux/ioport.h>
+ #include <linux/delay.h>
+ #include <linux/initrd.h>
++#include <linux/libfdt.h>
+ #include <linux/console.h>
+ #include <linux/cache.h>
+ #include <linux/screen_info.h>
+@@ -178,16 +179,74 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
  	early_fdt_ptr = fixmap_remap_fdt(dt_phys, &fdt_size, PAGE_KERNEL);
  }
  
 +extern char dtb_builtin_begin[];
 +extern char dtb_builtin_end[];
 +extern void kmark(u8 c);
++
++extern void kmark_u64(int slot, u64 val);
++
++static u64 __init lk_chosen_u64(const void *fdt, int node, const char *name)
++{
++	int len;
++	const __be32 *p = fdt_getprop(fdt, node, name, &len);
++
++	if (!p)
++		return 0;
++	if (len == 8)
++		return ((u64)be32_to_cpu(p[0]) << 32) | be32_to_cpu(p[1]);
++	if (len == 4)
++		return be32_to_cpu(p[0]);
++	return 0;
++}
++
++/* Read linux,initrd-start/end from the FDT LK handed over (x0). */
++static void __init douglas_initrd_from_lk_fdt(phys_addr_t lk_phys)
++{
++	int size = 0, node;
++	const void *fdt;
++	u64 start, end;
++
++	if (!lk_phys || !IS_ENABLED(CONFIG_BLK_DEV_INITRD))
++		return;
++	fdt = fixmap_remap_fdt(lk_phys, &size, PAGE_KERNEL_RO);
++	if (!fdt)
++		return;
++	node = fdt_path_offset(fdt, "/chosen");
++	if (node < 0)
++		return;
++	start = lk_chosen_u64(fdt, node, "linux,initrd-start");
++	end = lk_chosen_u64(fdt, node, "linux,initrd-end");
++	if (start && end > start) {
++		phys_initrd_start = start;
++		phys_initrd_size = end - start;
++		kmark_u64(6, start);
++		kmark_u64(7, end);
++	}
++}
 +extern void kmark_u64(int slot, u64 val);
 +
  static void __init setup_machine_fdt(phys_addr_t dt_phys)
@@ -1354,7 +1403,7 @@ index 44c4d79bd..a690aef3c 100644
  		pr_crit("\n"
  			"Error: invalid device tree blob at physical address %pa (virtual address 0x%px)\n"
  			"The dtb must be 8-byte aligned and must not exceed 2 MB in size\n"
-@@ -202,9 +219,7 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
+@@ -202,9 +261,7 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
  		while (true)
  			cpu_relax();
  	}
@@ -1365,7 +1414,7 @@ index 44c4d79bd..a690aef3c 100644
  
  	name = of_flat_dt_get_machine_name();
  	if (!name)
-@@ -287,6 +302,77 @@ u64 cpu_logical_map(unsigned int cpu)
+@@ -287,6 +344,77 @@ u64 cpu_logical_map(unsigned int cpu)
  	return __cpu_logical_map[cpu];
  }
  
@@ -1443,7 +1492,7 @@ index 44c4d79bd..a690aef3c 100644
  void __init __no_sanitize_address setup_arch(char **cmdline_p)
  {
  	setup_initial_init_mm(_stext, _etext, _edata, _end);
-@@ -301,9 +387,31 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+@@ -301,9 +429,35 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
  	arm64_use_ng_mappings = kaslr_requires_kpti();
  
  	early_fixmap_init();
@@ -1457,7 +1506,11 @@ index 44c4d79bd..a690aef3c 100644
 +	 * The LK always passes its own 3.18-era vendor DTB, which no mainline
 +	 * driver can bind. Unconditionally use our built-in douglas DTB
 +	 * instead (linked into .rodata - see arch/arm64/kernel/dtb_builtin.S).
++	 * Before dropping it, take the one thing only LK knows: where it put
++	 * the boot.img ramdisk (/chosen/linux,initrd-start|end), so an
++	 * external initramfs (postmarketOS) works with the built-in DTB.
 +	 */
++	douglas_initrd_from_lk_fdt(__fdt_pointer);
 +	__fdt_pointer = __pa_symbol(dtb_builtin_begin);
 +	kmark_u64(2, (u64)dtb_builtin_begin);
 +	kmark_u64(3, (u64)(*(u32 *)dtb_builtin_begin));
@@ -1475,7 +1528,7 @@ index 44c4d79bd..a690aef3c 100644
  
  	/*
  	 * Initialise the static keys early as they may be enabled by the
-@@ -311,6 +419,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+@@ -311,6 +465,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
  	 */
  	jump_label_init();
  	parse_early_param();
@@ -1483,7 +1536,7 @@ index 44c4d79bd..a690aef3c 100644
  
  	/*
  	 * Unmask asynchronous aborts and fiq after bringing up possible
-@@ -332,8 +441,10 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+@@ -332,8 +487,10 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
  	     pr_warn(FW_BUG "Kernel image misaligned at boot, please fix your bootloader!");
  
  	arm64_memblock_init();
