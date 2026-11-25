@@ -162,6 +162,11 @@ its own kernel as that self-heal image. Flashing from this laptop: `adb` is
 `/opt/android-sdk/platform-tools/adb`; the tablet's USB network needs
 `sudo ip link set <enp0s20f0uN> up && sudo ip addr add 10.42.0.1/24 dev <enp0s20f0uN>`.
 Password SSH without sshpass: `expect` (see `.work/` notes).
+Last defect found on this image: the lock screen rejected the password because the build's
+recursive `chown -R 0:0 /etc` had turned `/etc/shadow` into root:root, so the setgid PAM
+helper could not read it. Fixed on the device (`chgrp shadow /etc/shadow`) and in
+`tools/rootfs-inner.sh` (chown only the overlaid files; asserted). Unlock verified by the
+user 2026-11-25.
 
 ### Build
 
