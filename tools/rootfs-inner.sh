@@ -22,8 +22,12 @@ apk --root "$R" --initdb --arch aarch64 --repositories-file "$R/etc/apk/reposito
 
 # douglas-specific files: PID 1 (/sbin/douglas-init), session start, hooks, firmware
 cp -a "$SRC/rootfs/." "$R/"
-# the checkout belongs to the runner user; everything we overlay belongs to root
-for d in "$SRC"/rootfs/*; do chown -R 0:0 "$R/$(basename "$d")"; done
+# the checkout belongs to the runner user; the overlaid files belong to root. Only touch
+# the paths we added: a recursive chown of /etc etc. would clobber package ownership
+# (/etc/shadow root:shadow is what lets PAM verify passwords for non-root sessions).
+( cd "$SRC/rootfs" && find . -mindepth 1 | sed "s|^\./||" ) | while read -r f; do chown -h 0:0 "$R/$f"; done
+chroot "$R" chown root:shadow /etc/shadow && chmod 640 "$R/etc/shadow"
+chroot "$R" chown polkitd:polkitd /etc/polkit-1/rules.d && chmod 700 "$R/etc/polkit-1/rules.d"
 chmod 755 "$R/sbin/douglas-init" "$R"/usr/local/sbin/*
 mkdir -p "$R/etc/firmware" && cp "$R"/lib/firmware/* "$R/etc/firmware/"
 # kernel modules loaded by start-phosh / init-tier1.sh
@@ -70,6 +74,7 @@ stat -c "%U:%G %a %n" "$R/sbin/douglas-init" "$R/etc/phosh/phoc.ini" "$R/home/us
 [ "$(stat -c %u "$R/sbin/douglas-init")" = 0 ] || { echo "overlay not owned by root"; exit 1; }
 grep -q '^user:\$' "$R/etc/shadow" || { echo "user has no password hash"; exit 1; }
 grep -q '^seat:.*user' "$R/etc/group" || { echo "user not in seat group"; exit 1; }
+[ "$(stat -c %G "$R/etc/shadow")" = shadow ] || [ "$(stat -c %g "$R/etc/shadow")" = 42 ] || { echo "/etc/shadow not group shadow"; exit 1; }
 du -sh "$R" | sed "s|$R|rootfs|"
 
 # ext4 image, populated without loop devices or root on the host; grows to the whole
