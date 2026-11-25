@@ -54,6 +54,9 @@ def main():
     image_path = sys.argv[1]
     out_path = sys.argv[2]
     cmdline = (sys.argv[3] if len(sys.argv) > 3 else "bootopt=64S3,32N2,64N2").encode()
+    # optional external ramdisk (cpio.gz); LK passes its address through /chosen and the
+    # kernel's douglas_initrd_from_lk_fdt() picks it up
+    ramdisk_path = os.environ.get("DOUGLAS_RAMDISK")
 
     raw_image = open(image_path, "rb").read()
     gz_image = gzip.compress(raw_image, compresslevel=9, mtime=0)
@@ -65,7 +68,7 @@ def main():
         os.environ.get("DOUGLAS_DTB_TAIL", os.path.join(here, "reference", "vendor-dtb-tail.bin")),
     )
     kernel_blob = gz_image + dtb_tail
-    ramdisk_blob = make_empty_cpio_gz()
+    ramdisk_blob = open(ramdisk_path, "rb").read() if ramdisk_path else make_empty_cpio_gz()
 
     page_size = 2048
     kaddr = 0x40080000
