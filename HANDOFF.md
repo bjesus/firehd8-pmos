@@ -192,7 +192,18 @@ boot image from the CI artifact was booted on the device; the broken r105 apk wa
 from bjesus/pmos-packages (the index there is stale until the next tag publishes); the
 tablet's `/etc/apk/world` pins `linux-amazon-douglas=6.1.178-r104` until r106 is released.
 Note the publish step uses `rsync --delete`, so the repo only ever holds the latest build's
-packages. Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
+packages.
+
+**Wi-Fi MAC (2026-11-26 evening).** The driver reads `/data/nvram/APCFG/APRDEB/WIFI`
+(WIFI_CFG_PARAM_STRUCT, 512 bytes); without it the firmware picks a random MAC at every
+power-on, which also broke a Phosh profile pinned to one of those addresses.
+`amazon-douglas-config` (r4) ships `douglas-wifi-nvram.py`: it writes that file once, with
+the driver's compiled defaults (TX power table, EFUSE bytes, band edges, 5 GHz on) and a
+locally-administered MAC derived from the eMMC CID (`02:08:22:d7:ae:a6` on this unit;
+`DOUGLAS_WIFI_MAC=xx:..` overrides). Verified live: driver takes the file (`nvram_enable=1`),
+address stable across Wi-Fi power cycles. The factory MAC sits in Amazon's IDME data,
+which LK exposes in its FDT (`/idme/mac_addr`); reading it from the LK FDT like the initrd
+address would give the real one (not done). Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
 rootfs via adb, hash-verified, reboots only on success); reboot into TWRP from pmOS with
 `sudo sh -c 'printf "boot-recovery\0\0\0" | dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync; reboot -f'`.
 

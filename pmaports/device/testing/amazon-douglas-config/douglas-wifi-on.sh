@@ -4,6 +4,8 @@
 i=0
 while [ ! -c /dev/wmtWifi ] && [ $i -lt 60 ]; do sleep 1; i=$((i + 1)); done
 [ -c /dev/wmtWifi ] || { echo "douglas-wifi: /dev/wmtWifi never appeared"; exit 1; }
+# stable MAC: the driver reads /data/nvram/APCFG/APRDEB/WIFI when the function powers on
+python3 /usr/libexec/douglas/douglas-wifi-nvram.py || true
 for attempt in 1 2 3; do
 	echo 1 > /dev/wmtWifi 2>/dev/null
 	w=0

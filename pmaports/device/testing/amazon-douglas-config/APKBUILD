@@ -2,7 +2,7 @@
 pkgname=amazon-douglas-config
 pkgdesc="Amazon Fire HD 8 (2017) configuration: Wi-Fi/BT bring-up, sleep hook, sensors, defaults"
 pkgver=1
-pkgrel=3
+pkgrel=4
 url="https://github.com/bjesus/firehd8-pmos"
 license="MIT"
 arch="noarch"
@@ -17,6 +17,7 @@ depends="
 source="
 	wmt-launcher.py
 	douglas-wifi-on.sh
+	douglas-wifi-nvram.py
 	douglas-wmt.service
 	douglas-wifi.service
 	douglas-sleep.sh
@@ -35,6 +36,7 @@ package() {
 	# download handshake on /dev/stpwmt), then power the Wi-Fi function on.
 	install -Dm755 "$srcdir"/wmt-launcher.py "$pkgdir"/usr/libexec/douglas/wmt-launcher.py
 	install -Dm755 "$srcdir"/douglas-wifi-on.sh "$pkgdir"/usr/libexec/douglas/douglas-wifi-on.sh
+	install -Dm755 "$srcdir"/douglas-wifi-nvram.py "$pkgdir"/usr/libexec/douglas/douglas-wifi-nvram.py
 	install -Dm644 "$srcdir"/douglas-wmt.service "$pkgdir"/usr/lib/systemd/system/douglas-wmt.service
 	install -Dm644 "$srcdir"/douglas-wifi.service "$pkgdir"/usr/lib/systemd/system/douglas-wifi.service
 	mkdir -p "$pkgdir"/usr/lib/systemd/system/multi-user.target.wants
@@ -64,7 +66,8 @@ package() {
 
 sha512sums="
 b4e4f52eaa9045546516acf04325a644f476cf4e970e176f6f9420771a48ffae7d3f9d1ee018b8af62c04e916c51b036f80048bc1838aaf311803be1fb4b0758  wmt-launcher.py
-fd965d5c60a74e4456a5f3621f920f2b87646022eb9f3bc2b85680c366c8129555c063b851f4c202345f2e1634d30c28b57fe2fd0f70d7e6eeff9bf2ae5ce57f  douglas-wifi-on.sh
+95f2d1f9fab864270967b1c30fd490cf9066554f661edc2cdb01638d33dd5e020e403a2ee4bb84390a31b4822091e9d5d0c3c2e170becfb01f47dcfc15917985  douglas-wifi-on.sh
+453daed585d08aefe2d08c28a115b432d84a28c6f20c018bd86865640a1d2fdfc61a2f90d66d478b6ee678568b2a7a1c9867f8a89b80fe8bd443fbe7efe39976  douglas-wifi-nvram.py
 29c05c95aafee7ad668d4ffea47913faa68d4aea068a074012195e08aba9398258f1edf74e3f2679592917ed6259f371dffed9da0f550fa4037f1ebde48c2569  douglas-wmt.service
 bf5bcec7df55c373295d68861a14d7d7902ae71779ed78ad2e6c023c1a6203cb49a9251b2d9c1ffc7a16039c3868f7d29678795951f7423a03916870af1aeef0  douglas-wifi.service
 4575f7ca8aa19f6aca621cbfc6b2223586865a52a530581be6ab627ac76d0ba33cafc96637c5bc9f0ada8bbe3219465f2028590a7c6995663efd03ec3ec3052b  douglas-sleep.sh
