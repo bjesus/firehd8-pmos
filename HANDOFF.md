@@ -4,7 +4,7 @@ Companion to **`TODO.md`**, which holds the per-task, register-level detail. Thi
 file is the practical entry point: how to reach the device, how to build and
 flash, how to debug it, what works today, and what is left.
 
-Written 2026-11-21, updated through 2026-11-25. Current image: **`douglas-boot60.img`**, kernel `#32`, on the CI-built Alpine rootfs.
+Written 2026-11-21, updated through 2026-11-26. Current system: **postmarketOS edge built by CI** (`pmos.yml`), kernel package `linux-amazon-douglas` from fork tag `6.1.178-douglas4`; the Alpine images (boot60 etc.) are legacy.
 
 ---
 
@@ -146,6 +146,22 @@ device pulls kernel/driver updates. Flashing from TWRP: boot.img → `mmcblk0p5`
 image → `mmcblk0p16` (pmOS's initramfs finds the root by label, the image carries its own
 boot+root partition table). The hand-rolled Alpine image (`tools/rootfs-inner.sh`,
 `build.yml`) is kept as a manual-only fallback.
+
+First pmOS boot 2026-11-26 and what it taught: (1) the merged pmOS initramfs is 11.6 MB
+and the boot partition 16 MiB, so `deviceinfo_create_initfs_extra="true"` (stage-1 ramdisk
+1.5 MB, the rest loaded from pmOS_boot via `losetup -P`); (2) sshd died in preauth
+without CONFIG_SECCOMP, Tracker complained about Landlock, nftables.service failed: the
+pmOS config now carries kconfigcheck's default/usb_gadgets/zram/filesystems/nftables sets
+(tags douglas2/douglas3); (3) usb-signaller said "Unknown USB role" because the musb role
+switch sat at "none" in OTG mode: the glue now starts as device (douglas4); (4) the
+ECHO_* bring-up prints in the connectivity driver are pr_debug now; (5) the DT bootargs
+lost `ignore_loglevel loglevel=8`, and the pmos_* tokens of the boot.img cmdline are
+copied from LK's FDT so the initramfs sees the partition UUIDs. Verified on the device
+after douglas2: sudo, SSH, both douglas services, in-tree modules, battery 100 %, Wi-Fi,
+Bluetooth. Battery showed 0 % on the very first image only (udev broken by the missing
+seccomp). Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
+rootfs via adb, hash-verified, reboots only on success); reboot into TWRP from pmOS with
+`sudo sh -c 'printf "boot-recovery\0\0\0" | dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync; reboot -f'`.
 
 ### Legacy: hand-rolled Alpine image
 

@@ -5,9 +5,9 @@ Mainline Linux 6.1 for the MT8163-based Amazon Fire HD 8 (7th generation, codena
 kernel port (as a patch), the kernel config, the initramfs, the out-of-tree modules, the
 rootfs scripts, the flashing tools and the working notes.
 
-The **[build workflow](.github/workflows/build.yml)** produces a boot image you can flash
-from TWRP: see [Releases](../../releases) for tagged builds and the Actions tab for
-per-commit builds.
+Every tagged release ships a complete postmarketOS installation (boot image + rootfs)
+built by GitHub Actions: see [Releases](../../releases), or the Actions tab for
+per-commit builds. Install instructions below.
 
 ## Status
 
@@ -15,7 +15,7 @@ per-commit builds.
 
 | Component | Notes |
 |---|---|
-| Kernel and SoC | Linux 6.1, 4x Cortex-A53, 1.4 GB RAM, eMMC |
+| Kernel and SoC | Linux 6.1, 4x Cortex-A53, 1.4 GB RAM, eMMC; postmarketOS edge userspace |
 | Display | 800x1280 DSI panel through `mediatek-drm`, PWM backlight |
 | 3D graphics | Mali-T720 with Panfrost, GL ES 2.0 |
 | Touchscreen | Goodix GT9271, 5-point |
@@ -58,63 +58,80 @@ per-commit builds.
 
 ## What the build produces
 
-Every tagged release carries a complete installation, built by GitHub Actions from this
-repository alone:
+The port is packaged as a **postmarketOS device** (postmarketOS edge, now called Nura).
+`.github/workflows/pmos.yml` runs pmbootstrap on the GitHub runner with the `pmaports/`
+overlay from this repository and produces, for every push and every `v*` tag:
 
 | File | Contents |
 |---|---|
-| `douglas-boot.img` | kernel 6.1 + device tree + initramfs, packed for the Amazon LK bootloader. Goes to the `boot` partition |
-| `douglas-rootfs.img.gz` | Alpine Linux 3.21 with Phosh, NetworkManager, BlueZ, PulseAudio, the Wi-Fi/BT firmware, the kernel modules and the douglas scripts. ext4, grows to the whole partition on first boot. Goes to the `userdata` partition |
-| `douglas-mods.tar.gz` | the loadable modules alone, for updating an existing install (`/root/mods/`) |
-| `douglas-boot.config`, `SHA256SUMS` | the exact kernel config and checksums |
+| `douglas-pmos-boot.img` | kernel 6.1 + vendor DTB + stage-1 initramfs, packed for the Amazon LK bootloader (7.9 MB, the boot partition is 16 MiB). Goes to `boot` |
+| `douglas-pmos-rootfs.img.gz` | postmarketOS with Phosh: a 3 GB disk image with a `pmOS_boot` and a `pmOS_root` partition. Goes to `userdata` |
+| `SHA256SUMS` | checksums of both |
 
-The kernel job builds the base tree plus `kernel/0001-douglas-port.patch` with Ubuntu's
-aarch64 GCC. The rootfs job runs `tools/rootfs-inner.sh` in an aarch64 Alpine container
-(QEMU user emulation): it installs the packages in `tools/rootfs-packages.txt`, lays the
-`rootfs/` tree from this repo over them, creates the user account and writes the ext4
-image. Pushes to `main` rebuild the kernel; the rootfs is built for tags and on demand
-(Actions tab, "Run workflow").
+Userspace is current postmarketOS edge (Phosh 0.59 at the time of writing) and updates
+with `sudo apk upgrade`. The device packages (`linux-amazon-douglas`,
+`device-amazon-douglas`, `firmware-amazon-douglas`, `amazon-douglas-config`) are built from
+`pmaports/` and published to the package repository the image trusts, so kernel and
+driver updates arrive the same way.
 
-**Default login:** user `user`, password `douglas`, passwordless `sudo`. SSH (dropbear)
-is on from the first boot; the hostname is `douglas`, so `ssh user@douglas.lan` or
-`ssh user@douglas` usually works once the tablet is on Wi-Fi. Change the password with
-`passwd` after the first login. There is no root password; use `sudo`.
+**Default login:** user `user`, password `douglas`, `sudo`. SSH is enabled; the hostname
+is `douglas` (`ssh user@douglas.lan` on most home networks). Change the password with
+`passwd`.
 
 **Always a way out:** holding Power for about 8 seconds resets the tablet in hardware
 (PMIC), whatever the software is doing; hold Power + Volume Down right after to reach
-TWRP. If a flashed kernel fails to boot three times in a row, the initramfs reflashes the
-copy kept at `/root/douglas-boot-good.img` and reboots.
+TWRP.
 
 ## Installing from TWRP
 
 Prerequisites: a Fire HD 8 2017 with the bootloader unlocked through
 [amonet](https://github.com/chaosmaster/amonet) and TWRP installed (hold Power +
-Volume Down to enter it), `adb` on your computer, and the two images from a release.
+Volume Down from power-on), `adb` on your computer, and the two images from a release.
 Partitions: `boot` is `/dev/block/mmcblk0p5`, `userdata` is `/dev/block/mmcblk0p16`
 (12 GB). **The rootfs image erases `userdata`, i.e. the Android user data.** The
-Android system partitions stay intact, and TWRP stays available.
+Android system partitions stay intact and TWRP stays available.
 
 ```sh
-# 1. root filesystem (about 1.3 GB of data, streamed and uncompressed on the device)
-gunzip -c douglas-rootfs.img.gz | adb exec-in "dd of=/dev/block/mmcblk0p16 bs=4M"
-# 2. kernel
-adb push douglas-boot.img /tmp/
-adb shell "dd if=/tmp/douglas-boot.img of=/dev/block/mmcblk0p5 bs=1M conv=fsync && sync"
-adb shell "dd if=/dev/block/mmcblk0p5 bs=$(stat -c %s douglas-boot.img) count=1 | sha256sum"
+# in TWRP, over adb
+adb shell "umount /data 2>/dev/null; true"
+adb push douglas-pmos-boot.img /tmp/
+adb shell "dd if=/tmp/douglas-pmos-boot.img of=/dev/block/mmcblk0p5 bs=1M conv=fsync && sync"
+gunzip -c douglas-pmos-rootfs.img.gz | adb exec-in "dd of=/dev/block/mmcblk0p16 bs=4M; sync"
 adb reboot
 ```
 
-Compare the last hash with `SHA256SUMS`. The first boot takes a little longer while the
-filesystem grows to the full partition; then Phosh starts and asks for Wi-Fi.
-To update an existing install, flash only `douglas-boot.img` and, if the kernel
-version changed, unpack `douglas-mods.tar.gz` into `/root/` on the device.
+The rootfs write takes about 15 minutes over USB 2. The first boot grows the root
+filesystem to the whole partition, then Phosh starts.
 
-**Firmware notice.** `rootfs/lib/firmware` holds the MT6625L Wi-Fi/Bluetooth firmware
-(`WMT_SOC.cfg`, `ROMv2_lm_patch_*`, `WIFI_RAM_CODE_8163`), the Goodix touch firmware
-and the MD32 blobs taken from the device's Amazon firmware; they are the same files
-[LibreEcho-mt8163-connectivity](https://github.com/aslater3/LibreEcho-mt8163-connectivity)
+**Updating:** `sudo apk upgrade` on the tablet. A new kernel package regenerates
+`/boot/boot.img`; copy it to the boot partition with
+`sudo dd if=/boot/boot.img of=/dev/mmcblk0p5 bs=1M conv=fsync` (automating this is on
+the list).
+
+**Firmware notice.** `firmware-amazon-douglas` carries the MT6625L Wi-Fi/Bluetooth
+firmware (`WMT_SOC.cfg`, `ROMv2_lm_patch_*`, `WIFI_RAM_CODE_8163`), the Goodix touch
+firmware and the MD32 blobs taken from the device's Amazon firmware; they are the same
+files [LibreEcho-mt8163-connectivity](https://github.com/aslater3/LibreEcho-mt8163-connectivity)
 and the Amazon GPL kernel sources ship. They are MediaTek/Amazon proprietary binaries,
-redistributed here only so the images are installable.
+redistributed only so the images are installable.
+
+## Building it yourself
+
+With pmbootstrap on any Linux machine (the way postmarketOS devices are built):
+
+```sh
+git clone https://gitlab.postmarketos.org/postmarketOS/pmaports.git
+rm -rf pmaports/device/archived/*-amazon-douglas      # upstream's old downstream port
+cp -r firehd8-pmos/pmaports/. pmaports/
+pmbootstrap config aports $PWD/pmaports
+pmbootstrap init          # device amazon-douglas, UI phosh, systemd
+pmbootstrap install --password douglas && pmbootstrap export
+```
+
+The kernel is built from the fork tag named in `linux-amazon-douglas/APKBUILD`
+(`bjesus/LibreEcho-Linux-6.1`, branch `douglas`); the same changes are
+`kernel/0001-douglas-port.patch`. The earlier hand-rolled Alpine image
+(`tools/rootfs-inner.sh`, workflow `build.yml`) is kept as a manual-only fallback.
 
 ## Repository layout
 
@@ -124,8 +141,9 @@ redistributed here only so the images are installable.
 | `douglas-initfs/` | the initramfs (busybox + `init`, switch_root to the rootfs, self-heal logic) |
 | `douglas-alsa/` | ALSA machine driver (playback + capture), battery gauge and light sensor modules |
 | `douglas-keys/` | Volume Up key driver |
-| `rootfs/` | everything laid over the Alpine packages: PID 1 (`sbin/douglas-init`), `start-phosh`, hooks, firmware, defaults |
-| `tools/` | rootfs build script and package list used by the workflow |
+| `pmaports/` | the postmarketOS device overlay: `device-amazon-douglas`, `linux-amazon-douglas`, `firmware-amazon-douglas`, `amazon-douglas-config` |
+| `tools/` | `pmb` (pmbootstrap wrapper), `update-checksums.py`, the legacy Alpine rootfs builder |
+| `rootfs/` | legacy: files of the hand-rolled Alpine image |
 | `reference/` | the vendor DTB tail and the bootloader's `chosen` node (`atag,devinfo` holds the thermal calibration) |
 | `douglas-audio-test/` | audio diagnostics, including vendor-kernel (TWRP) reference dumps |
 | `mkboot_douglas.py`, `*.sh`, `*.py` | boot-image packing and amonet/flash helpers |
