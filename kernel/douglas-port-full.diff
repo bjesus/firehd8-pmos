@@ -2906,10 +2906,15 @@ index 02d29d90d..a766d39c0 100644
  		if (!iRet) {
  			WMT_INFO_FUNC("call wlan probe OK when do wlan register to wmt\n");
 diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c
-index 36d6a13eb..5aec5c756 100644
+index 36d6a13eb..4b431c30a 100644
 --- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c
 +++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c
-@@ -142,7 +142,7 @@ static int mtk_bt_hci_open(struct hci_dev *hdev)
+@@ -138,14 +138,14 @@ static int mtk_bt_hci_open(struct hci_dev *hdev)
+ {
+ 	int result;
+ 
+-	pr_info("ECHO_BT_HCI_OPEN: begin\n");
++	pr_debug("ECHO_BT_HCI_OPEN: begin\n");
  
  	result = mtk_wcn_wmt_func_on(WMTDRV_TYPE_BT);
  	if (result != MTK_WCN_BOOL_TRUE) {
@@ -2917,7 +2922,51 @@ index 36d6a13eb..5aec5c756 100644
 +		pr_debug("ECHO_BT_HCI_OPEN: FUNC_ON failed ret=%d\n", result);
  		return -ENODEV;
  	}
- 	pr_info("ECHO_BT_HCI_OPEN: FUNC_ON ok ready=%d\n",
+-	pr_info("ECHO_BT_HCI_OPEN: FUNC_ON ok ready=%d\n",
++	pr_debug("ECHO_BT_HCI_OPEN: FUNC_ON ok ready=%d\n",
+ 		mtk_wcn_stp_is_ready());
+ 	if (mtk_wcn_stp_is_ready() == MTK_WCN_BOOL_FALSE) {
+ 		mtk_wcn_wmt_func_off(WMTDRV_TYPE_BT);
+@@ -156,7 +156,7 @@ static int mtk_bt_hci_open(struct hci_dev *hdev)
+ 	 * Register the HCI RX sink here, after the transport is ready; registering
+ 	 * from BT_init() is too early and leaves stp_if_rx NULL. */
+ 	result = mtk_wcn_stp_register_if_rx(mtk_bt_hci_receive);
+-	pr_info("ECHO_BT_HCI_OPEN: RX register ret=%d\n", result);
++	pr_debug("ECHO_BT_HCI_OPEN: RX register ret=%d\n", result);
+ 	if (result) {
+ 		BT_ERR_FUNC("HCI RX callback registration failed: %d\n", result);
+ 		mtk_wcn_wmt_func_off(WMTDRV_TYPE_BT);
+@@ -165,7 +165,7 @@ static int mtk_bt_hci_open(struct hci_dev *hdev)
+ 
+ 	set_bit(HCI_RUNNING, &hdev->flags);
+ 	mtk_wcn_stp_set_bluez(1);
+-	pr_info("ECHO_BT_HCI_OPEN: complete\n");
++	pr_debug("ECHO_BT_HCI_OPEN: complete\n");
+ 	return 0;
+ }
+ 
+@@ -190,10 +190,10 @@ static void mtk_bt_hci_work(struct work_struct *work)
+ 
+ 		skb_push(skb, 1);
+ 		skb->data[0] = pkt_type;
+-		pr_info("ECHO_BT_HCI_TX: type=0x%02x len=%u\n", pkt_type, skb->len);
++		pr_debug("ECHO_BT_HCI_TX: type=0x%02x len=%u\n", pkt_type, skb->len);
+ 		result = mtk_wcn_stp_send_data(skb->data, skb->len,
+ 					       BT_TASK_INDX);
+-		pr_info("ECHO_BT_HCI_TX: result=%d\n", result);
++		pr_debug("ECHO_BT_HCI_TX: result=%d\n", result);
+ 		if (result <= 0) {
+ 			hci->hdev->stat.err_tx++;
+ 			skb_pull(skb, 1);
+@@ -243,7 +243,7 @@ static void mtk_bt_hci_receive(const UINT8 *data, INT32 size)
+ 
+ 	if (!mtk_hci.hdev || size <= 0)
+ 		return;
+-	pr_info("ECHO_BT_HCI_RX: size=%d type=0x%02x\n", size, data[0]);
++	pr_debug("ECHO_BT_HCI_RX: size=%d type=0x%02x\n", size, data[0]);
+ 
+ 	/* The STP transport delivers a complete HCI frame whose first byte is
+ 	 * the packet type (command/ACL/SCO/event).  Modern kernels removed
 @@ -266,17 +266,47 @@ static void mtk_bt_hci_receive(const UINT8 *data, INT32 size)
  	mtk_hci.hdev->stat.byte_rx += size;
  }
@@ -2947,7 +2996,7 @@ index 36d6a13eb..5aec5c756 100644
 +		pr_debug("ECHO_BT_HCI: STP never became ready, HCI not registered\n");
 +		return;
 +	}
-+	pr_info("ECHO_BT_HCI: STP ready after %d polls, registering hci\n", mtk_hci_reg_tries);
++	pr_debug("ECHO_BT_HCI: STP ready after %d polls, registering hci\n", mtk_hci_reg_tries);
 +	result = hci_register_dev(mtk_hci.hdev);
 +	if (result) {
 +		pr_debug("ECHO_BT_HCI: hci_register_dev failed %d\n", result);
@@ -4272,10 +4321,24 @@ index 68a5e07ee..1ed4c2ab8 100644
  
  	for (ctrl_id = 0; ctrl_id < mt->conf->num_controller ; ctrl_id++)
 diff --git a/drivers/usb/musb/mediatek.c b/drivers/usb/musb/mediatek.c
-index dd3008281..e92d291ac 100644
+index dd3008281..f60ce8078 100644
 --- a/drivers/usb/musb/mediatek.c
 +++ b/drivers/usb/musb/mediatek.c
-@@ -1179,7 +1179,13 @@ static int mtk_musb_probe(struct platform_device *pdev)
+@@ -748,6 +748,13 @@ static enum usb_role musb_usb_role_sx_get(struct usb_role_switch *sw)
+ {
+ 	struct mtk_glue *glue = usb_role_switch_get_drvdata(sw);
+ 
++	/*
++	 * douglas: no ID pin, so the OTG state machine never leaves "none"
++	 * while the controller is in fact a B-device with its gadget bound.
++	 * Report that as "device" so userspace (pmOS usb-signaller) acts on it.
++	 */
++	if (glue->role == USB_ROLE_NONE)
++		return USB_ROLE_DEVICE;
+ 	return glue->role;
+ }
+ 
+@@ -1179,7 +1186,13 @@ static int mtk_musb_probe(struct platform_device *pdev)
  		break;
  	case USB_DR_MODE_OTG:
  		glue->phy_mode = PHY_MODE_USB_OTG;
@@ -4290,7 +4353,7 @@ index dd3008281..e92d291ac 100644
  		break;
  	default:
  		dev_err(&pdev->dev, "Error 'dr_mode' property\n");
-@@ -1264,6 +1270,7 @@ static int mtk_musb_remove(struct platform_device *pdev)
+@@ -1264,6 +1277,7 @@ static int mtk_musb_remove(struct platform_device *pdev)
  static const struct of_device_id mtk_musb_match[] = {
  	{ .compatible = "mediatek,mt8163-usb20", .data = &mt8163_musb_data },
  	{ .compatible = "mediatek,mtk-musb", .data = &mtk_musb_data },

@@ -2,7 +2,7 @@
 pkgname=amazon-douglas-config
 pkgdesc="Amazon Fire HD 8 (2017) configuration: Wi-Fi/BT bring-up, sleep hook, sensors, defaults"
 pkgver=1
-pkgrel=0
+pkgrel=1
 url="https://github.com/bjesus/firehd8-pmos"
 license="MIT"
 arch="noarch"
@@ -21,6 +21,7 @@ source="
 	douglas-wifi.service
 	douglas-sleep.sh
 	99-douglas-accel.rules
+	90-douglas-usb-role.rules
 	20-douglas-nm.conf
 	douglas-tmpfiles.conf
 	douglas-modules.conf
@@ -46,6 +47,7 @@ package() {
 
 	# BMA253 is mounted with Y inverted
 	install -Dm644 "$srcdir"/99-douglas-accel.rules "$pkgdir"/usr/lib/udev/rules.d/99-douglas-accel.rules
+	install -Dm644 "$srcdir"/90-douglas-usb-role.rules "$pkgdir"/usr/lib/udev/rules.d/90-douglas-usb-role.rules
 	# the Wi-Fi driver cannot change its MAC; ACD confuses it
 	install -Dm644 "$srcdir"/20-douglas-nm.conf "$pkgdir"/usr/lib/NetworkManager/conf.d/20-douglas.conf
 	# schedutil governor, 1.5 A charging (kernel defaults are conservative on purpose)
@@ -60,6 +62,7 @@ package() {
 }
 
 sha512sums="
+fc1d9fe15ccf88c06948242f126e874a4bf6f3911fb8f16402895c082ab870f305ef94c509233f973950c3950cc187e5cd01cb642dac8c0044a7b2e93c795e98  90-douglas-usb-role.rules
 b4e4f52eaa9045546516acf04325a644f476cf4e970e176f6f9420771a48ffae7d3f9d1ee018b8af62c04e916c51b036f80048bc1838aaf311803be1fb4b0758  wmt-launcher.py
 fd965d5c60a74e4456a5f3621f920f2b87646022eb9f3bc2b85680c366c8129555c063b851f4c202345f2e1634d30c28b57fe2fd0f70d7e6eeff9bf2ae5ce57f  douglas-wifi-on.sh
 29c05c95aafee7ad668d4ffea47913faa68d4aea068a074012195e08aba9398258f1edf74e3f2679592917ed6259f371dffed9da0f550fa4037f1ebde48c2569  douglas-wmt.service
