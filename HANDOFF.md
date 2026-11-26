@@ -4,7 +4,7 @@ Companion to **`TODO.md`**, which holds the per-task, register-level detail. Thi
 file is the practical entry point: how to reach the device, how to build and
 flash, how to debug it, what works today, and what is left.
 
-Written 2026-11-21, updated through 2026-11-26. Current system: **postmarketOS edge built by CI** (`pmos.yml`), kernel package `linux-amazon-douglas` from fork tag `6.1.178-douglas4`; the Alpine images (boot60 etc.) are legacy.
+Written 2026-11-21, updated through 2026-11-26. Current system: **postmarketOS edge built by CI** (`pmos.yml`), kernel package `linux-amazon-douglas` from fork tag `6.1.178-douglas8` (v0.2.2); the Alpine images (boot60 etc.) are legacy.
 
 ---
 
@@ -211,7 +211,11 @@ partitions fresh UUIDs, and since douglas2 the kernel forwarded `pmos_root_uuid`
 boot.img cmdline, so the initramfs searched for a partition that did not exist. douglas8
 stops forwarding the two `pmos_*_uuid` tokens (labels pmOS_boot/pmOS_root are used
 instead; other `pmos.*` switches still pass through). Rule: test boot images from the
-device's own build, or from douglas8 on. Recovery was TWRP + the v0.2.1 boot image. Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
+device's own build, or from douglas8 on. Recovery was TWRP + the v0.2.1 boot image.
+douglas8 verified on the device 2026-11-26 22:03: kernel #108, role switch
+`musb-hdrc.2.auto-role-switch` with `device/udc/musb-hdrc.2.auto` beneath it, usb-signaller
+`mode_request` → `developer_mode` (the "Unknown USB mode" notice is gone). v0.2.2 = kernel
+r107 (douglas8) + amazon-douglas-config r4 (stable MAC). Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
 rootfs via adb, hash-verified, reboots only on success); reboot into TWRP from pmOS with
 `sudo sh -c 'printf "boot-recovery\0\0\0" | dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync; reboot -f'`.
 

@@ -20,7 +20,7 @@ per-commit builds. Install instructions below.
 | 3D graphics | Mali-T720 with Panfrost, GL ES 2.0 |
 | Touchscreen | Goodix GT9271, 5-point |
 | Buttons | Power, Volume Up, Volume Down |
-| Wi-Fi | MT6625L, WPA2, DHCPv4 and DHCPv6, NetworkManager |
+| Wi-Fi | MT6625L, WPA2, DHCPv4 and DHCPv6, NetworkManager; stable per-device MAC (locally administered, the factory one isn't read yet) |
 | Bluetooth | BR/EDR and BLE through BlueZ, scanning and pairing |
 | Audio playback | Speaker and headphone jack with automatic switching, hardware volume |
 | Audio capture | Built-in microphone |
@@ -30,7 +30,7 @@ per-commit builds. Install instructions below.
 | Thermal | SoC die sensor with calibration, CPU throttling at 75/85 °C |
 | Real-time clock | Keeps time across power-off, RTC wake alarm |
 | Suspend and resume | s2idle via `loginctl suspend`; power key and RTC wake |
-| USB | Ethernet gadget for development access (usb0) |
+| USB | postmarketOS USB modes (usb-signaller): developer networking by default, MTP/tethering selectable |
 | Watchdog | Hardware watchdog with pretimeout panic |
 | Recovery | Self-healing boot: three failed boots reflash the last known-good image |
 
