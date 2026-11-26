@@ -4272,10 +4272,25 @@ index 68a5e07ee..1ed4c2ab8 100644
  
  	for (ctrl_id = 0; ctrl_id < mt->conf->num_controller ; ctrl_id++)
 diff --git a/drivers/usb/musb/mediatek.c b/drivers/usb/musb/mediatek.c
-index dd3008281..2f26c2461 100644
+index dd3008281..e92d291ac 100644
 --- a/drivers/usb/musb/mediatek.c
 +++ b/drivers/usb/musb/mediatek.c
-@@ -1264,6 +1264,7 @@ static int mtk_musb_remove(struct platform_device *pdev)
+@@ -1179,7 +1179,13 @@ static int mtk_musb_probe(struct platform_device *pdev)
+ 		break;
+ 	case USB_DR_MODE_OTG:
+ 		glue->phy_mode = PHY_MODE_USB_OTG;
+-		glue->role = USB_ROLE_NONE;
++		/*
++		 * douglas: the tablet has no ID pin wiring, so OTG only ever runs
++		 * as a B-device. Start as "device" instead of "none": userspace
++		 * (postmarketOS usb-signaller) reads the role switch and refuses to
++		 * configure the gadget when the role is unknown.
++		 */
++		glue->role = USB_ROLE_DEVICE;
+ 		break;
+ 	default:
+ 		dev_err(&pdev->dev, "Error 'dr_mode' property\n");
+@@ -1264,6 +1270,7 @@ static int mtk_musb_remove(struct platform_device *pdev)
  static const struct of_device_id mtk_musb_match[] = {
  	{ .compatible = "mediatek,mt8163-usb20", .data = &mt8163_musb_data },
  	{ .compatible = "mediatek,mtk-musb", .data = &mtk_musb_data },
