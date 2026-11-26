@@ -4321,7 +4321,7 @@ index 68a5e07ee..1ed4c2ab8 100644
  
  	for (ctrl_id = 0; ctrl_id < mt->conf->num_controller ; ctrl_id++)
 diff --git a/drivers/usb/musb/mediatek.c b/drivers/usb/musb/mediatek.c
-index dd3008281..f60ce8078 100644
+index dd3008281..12588f961 100644
 --- a/drivers/usb/musb/mediatek.c
 +++ b/drivers/usb/musb/mediatek.c
 @@ -748,6 +748,13 @@ static enum usb_role musb_usb_role_sx_get(struct usb_role_switch *sw)
@@ -4338,7 +4338,21 @@ index dd3008281..f60ce8078 100644
  	return glue->role;
  }
  
-@@ -1179,7 +1186,13 @@ static int mtk_musb_probe(struct platform_device *pdev)
+@@ -760,7 +767,12 @@ static int mtk_otg_switch_init(struct mtk_glue *glue)
+ 	role_sx_desc.allow_userspace_control = true;
+ 	role_sx_desc.fwnode = dev_fwnode(glue->dev);
+ 	role_sx_desc.driver_data = glue;
+-	glue->role_sw = usb_role_switch_register(glue->dev, &role_sx_desc);
++	/*
++	 * douglas: register the switch on the musb controller device (the one
++	 * that owns the UDC) rather than on the glue. Userspace (postmarketOS
++	 * usb-signaller) resolves the gadget as <role-switch>/device/udc/.
++	 */
++	glue->role_sw = usb_role_switch_register(&glue->musb_pdev->dev, &role_sx_desc);
+ 
+ 	return PTR_ERR_OR_ZERO(glue->role_sw);
+ }
+@@ -1179,7 +1191,13 @@ static int mtk_musb_probe(struct platform_device *pdev)
  		break;
  	case USB_DR_MODE_OTG:
  		glue->phy_mode = PHY_MODE_USB_OTG;
@@ -4353,7 +4367,7 @@ index dd3008281..f60ce8078 100644
  		break;
  	default:
  		dev_err(&pdev->dev, "Error 'dr_mode' property\n");
-@@ -1264,6 +1277,7 @@ static int mtk_musb_remove(struct platform_device *pdev)
+@@ -1264,6 +1282,7 @@ static int mtk_musb_remove(struct platform_device *pdev)
  static const struct of_device_id mtk_musb_match[] = {
  	{ .compatible = "mediatek,mt8163-usb20", .data = &mt8163_musb_data },
  	{ .compatible = "mediatek,mtk-musb", .data = &mtk_musb_data },

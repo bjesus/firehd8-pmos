@@ -1,2 +1,2 @@
 # No OTG ID pin: the controller is always a B-device. Tell usb-signaller so.
-SUBSYSTEM=="usb_role", KERNEL=="11200000.usb-role-switch", ATTR{role}="device"
+SUBSYSTEM=="usb_role", KERNEL=="*-role-switch", ATTR{role}="device"
