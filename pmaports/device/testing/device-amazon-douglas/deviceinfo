@@ -20,6 +20,9 @@ deviceinfo_screen_height="1280"
 # The kernel boots from its built-in device tree and only takes the ramdisk
 # location from the tree LK hands over. That tree is the vendor DTB appended
 # here (LK patches /chosen into it); see linux-amazon-douglas.
+# The boot partition is 16 MiB: keep the boot.img initramfs minimal and load
+# initramfs-extra from the pmOS_boot filesystem (stage 1 finds it with losetup -P).
+deviceinfo_create_initfs_extra="true"
 deviceinfo_dtb="mediatek/mt8163-douglas-lk"
 deviceinfo_append_dtb="true"
 
