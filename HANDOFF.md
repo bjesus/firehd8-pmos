@@ -162,9 +162,14 @@ Bluetooth. Battery showed 0 % on the very first image only (udev broken by the m
 seccomp). (6) usb-signaller's "Unknown USB mode": the musb role switch reads "none" in OTG
 mode (no ID pin); `echo device > /sys/class/usb_role/11200000.usb-role-switch/role` made it
 configure Developer mode at once, so douglas5 reports "device" while the OTG state is
-undecided and `90-douglas-usb-role.rules` sets it from udev as well. v0.2.0 is tagged on
-that state; the tag run is the first with the signing/push secrets, so it publishes the
-packages to bjesus/pmos-packages/amazon-douglas and creates the GitHub release. Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
+undecided and `90-douglas-usb-role.rules` sets it from udev as well. v0.2.1 is tagged on that state
+(v0.2.0 failed on an abuild rule: sha512sums must follow the order of source). Its run
+signed the packages with bjesus-pmos.rsa, published them to
+bjesus/pmos-packages/amazon-douglas/edge (GitHub Pages) and created the release with
+`douglas-pmos-boot.img`, `douglas-pmos-rootfs.img.gz`, `SHA256SUMS`. Later kernel/config
+updates reach installed tablets with `sudo apk upgrade` followed by
+`sudo dd if=/boot/boot.img of=/dev/mmcblk0p5 bs=1M conv=fsync` (boot-deploy regenerates
+/boot/boot.img; flash_method is none, so nothing writes the partition automatically yet). Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
 rootfs via adb, hash-verified, reboots only on success); reboot into TWRP from pmOS with
 `sudo sh -c 'printf "boot-recovery\0\0\0" | dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync; reboot -f'`.
 
