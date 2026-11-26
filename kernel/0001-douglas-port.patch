@@ -1,7 +1,7 @@
 From 83a78c5ba40a104f677211cf7aaccb64f2b5c2c3 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sat, 21 Nov 2026 22:18:42 +0100
-Subject: [PATCH 1/7] arm64: mt8163-douglas: mainline port of the Amazon Fire
+Subject: [PATCH 1/8] arm64: mt8163-douglas: mainline port of the Amazon Fire
  HD 8 (2017)
 
 Built-in device tree for douglas (LK's FDT is unusable), NT35521 DSI panel,
@@ -3287,7 +3287,7 @@ index 000000000..977ccb45d
 From 471771633e4a16f87e4f84e91fbde034a932c86e Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sat, 21 Nov 2026 23:58:04 +0100
-Subject: [PATCH 2/7] mt8163-douglas: suspend fixes, thermal calibration,
+Subject: [PATCH 2/8] mt8163-douglas: suspend fixes, thermal calibration,
  watchdog bark, boot-stall fix
 
 - scpsys: keep the display power domain always on; the DSI controller runs on
@@ -3346,7 +3346,7 @@ index 250ce2dcd..417d8e192 100644
 From eb13032d1f32f627966958cc942c6689234f0918 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sun, 22 Nov 2026 00:26:55 +0100
-Subject: [PATCH 3/7] mt8163-connectivity: register the BlueZ HCI bridge only
+Subject: [PATCH 3/8] mt8163-connectivity: register the BlueZ HCI bridge only
  once STP is ready
 
 hci_register_dev() queues the core's setup power-on immediately; on MT8163
@@ -3466,7 +3466,7 @@ index 36d6a13eb..ab3d69021 100644
 From a911117c73d542074ccdf499a7f8aa680184691a Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sun, 22 Nov 2026 00:30:50 +0100
-Subject: [PATCH 4/7] drm/mediatek: douglas: keep DSI powered across the CRTC's
+Subject: [PATCH 4/8] drm/mediatek: douglas: keep DSI powered across the CRTC's
  final vblank wait
 
 The bridge's post_disable gated the DSI clocks before mtk_drm_crtc_atomic_disable
@@ -3538,7 +3538,7 @@ index 6c4fe4ac8..e052dea64 100644
 From 79425471636fd5e5c9151408ed3f02df8c330466 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sun, 22 Nov 2026 12:47:56 +0100
-Subject: [PATCH 5/7] arm64: dts: mt8163-douglas: enable the PMIC long-press
+Subject: [PATCH 5/8] arm64: dts: mt8163-douglas: enable the PMIC long-press
  hardware reset
 
 An 8 s Power hold resets the board through the MT6323 regardless of the
@@ -3573,7 +3573,7 @@ index 4cd041f55..08d6b0184 100644
 From 3c4051757e8c699dbd035b4414cdb75f95c73095 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Wed, 25 Nov 2026 23:28:54 +0100
-Subject: [PATCH 6/7] arm64: douglas: take the initrd location from the
+Subject: [PATCH 6/8] arm64: douglas: take the initrd location from the
  LK-provided FDT
 
 The kernel boots from its built-in DTB and ignores the vendor tree LK
@@ -3666,7 +3666,7 @@ index a690aef3c..c77479cee 100644
 From 63d58e1c3c8c7bb275b75305701c0951f52be0a8 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Wed, 25 Nov 2026 23:42:20 +0100
-Subject: [PATCH 7/7] douglas: bring the board drivers in-tree; sensors in the
+Subject: [PATCH 7/8] douglas: bring the board drivers in-tree; sensors in the
  device tree
 
 drivers/misc/douglas: Volume Up key (MT8163 KPD poll) and the MT6323
@@ -5269,6 +5269,105 @@ index 000000000..3e361f723
 +module_exit(douglas_alsa_exit);
 +MODULE_LICENSE("GPL");
 +MODULE_DESCRIPTION("Amazon Fire HD 8 (douglas) loadable ALSA sound card");
+-- 
+2.56.1
+
+
+From 6cfc453d0588636ce3faea120cf9cb681fdb805f Mon Sep 17 00:00:00 2001
+From: Yo'av Moshe <github@yoavmoshe.com>
+Date: Thu, 26 Nov 2026 09:33:45 +0100
+Subject: [PATCH 8/8] douglas: quiet boot, pass pmos_* tokens from the LK
+ command line
+
+The device-tree bootargs drop the debugging flood (ignore_loglevel,
+loglevel=8) so postmarketOS can show its splash. The pmos_*/pmos.* tokens
+of the boot.img command line (partition UUIDs) are copied from the FDT LK
+hands over into the built-in command line.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+---
+ .../boot/dts/mediatek/mt8163-douglas.dts      |  2 +-
+ arch/arm64/kernel/setup.c                     | 40 ++++++++++++++++++-
+ 2 files changed, 40 insertions(+), 2 deletions(-)
+
+diff --git a/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
+index c492a30fd..49be06023 100644
+--- a/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
++++ b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
+@@ -230,7 +230,7 @@ chosen {
+ 		#address-cells = <2>;
+ 		#size-cells = <2>;
+ 		ranges;
+-		bootargs = "clk_ignore_unused regulator_ignore_unused pd_ignore_unused irqchip.gicv2_force_probe=1 console=tty0 ignore_loglevel loglevel=8 panic=1";
++		bootargs = "clk_ignore_unused regulator_ignore_unused pd_ignore_unused irqchip.gicv2_force_probe=1 console=tty0 loglevel=4 panic=1";
+ 
+ 		framebuffer0: framebuffer@98600000 {
+ 			compatible = "simple-framebuffer";
+diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
+index c77479cee..255b46365 100644
+--- a/arch/arm64/kernel/setup.c
++++ b/arch/arm64/kernel/setup.c
+@@ -199,7 +199,42 @@ static u64 __init lk_chosen_u64(const void *fdt, int node, const char *name)
+ 	return 0;
+ }
+ 
+-/* Read linux,initrd-start/end from the FDT LK handed over (x0). */
++static char douglas_lk_extra_cmdline[COMMAND_LINE_SIZE] __initdata;
++
++/*
++ * The LK bootargs are the vendor's (console=ttyMT0, root=/dev/ram, ...) plus
++ * whatever the boot.img cmdline carried. Keep only the postmarketOS tokens
++ * (pmos_*, pmos.*) so the initramfs can find its partitions by UUID.
++ */
++static void __init douglas_pick_lk_cmdline(const void *fdt, int node)
++{
++	int len;
++	const char *args = fdt_getprop(fdt, node, "bootargs", &len);
++	const char *p, *end;
++
++	if (!args || len <= 0)
++		return;
++	end = args + strnlen(args, len);
++	for (p = args; p < end;) {
++		const char *tok = p;
++
++		while (p < end && *p != ' ')
++			p++;
++		if (p - tok > 5 && !strncmp(tok, "pmos", 4) && (tok[4] == '_' || tok[4] == '.')) {
++			size_t have = strlen(douglas_lk_extra_cmdline);
++
++			if (have + 1 + (p - tok) < sizeof(douglas_lk_extra_cmdline)) {
++				douglas_lk_extra_cmdline[have] = ' ';
++				memcpy(douglas_lk_extra_cmdline + have + 1, tok, p - tok);
++				douglas_lk_extra_cmdline[have + 1 + (p - tok)] = '\0';
++			}
++		}
++		while (p < end && *p == ' ')
++			p++;
++	}
++}
++
++/* Read linux,initrd-start/end (and the pmos_* bootargs) from the FDT LK handed over (x0). */
+ static void __init douglas_initrd_from_lk_fdt(phys_addr_t lk_phys)
+ {
+ 	int size = 0, node;
+@@ -214,6 +249,7 @@ static void __init douglas_initrd_from_lk_fdt(phys_addr_t lk_phys)
+ 	node = fdt_path_offset(fdt, "/chosen");
+ 	if (node < 0)
+ 		return;
++	douglas_pick_lk_cmdline(fdt, node);
+ 	start = lk_chosen_u64(fdt, node, "linux,initrd-start");
+ 	end = lk_chosen_u64(fdt, node, "linux,initrd-end");
+ 	if (start && end > start) {
+@@ -450,6 +486,8 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+ 
+ 	setup_machine_fdt(__fdt_pointer);
+ 	kmark('B');			/* DTB scanned, memory/chosen known */
++	if (douglas_lk_extra_cmdline[0])
++		strlcat(boot_command_line, douglas_lk_extra_cmdline, COMMAND_LINE_SIZE);
+ 
+ 	/*
+ 	 * NOTE: do NOT touch the MTK RGU watchdog here. Early experiments
 -- 
 2.56.1
 

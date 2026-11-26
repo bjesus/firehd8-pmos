@@ -55,7 +55,7 @@ index 0ec90cb3e..dc639bcd9 100644
 +dtb-y += mt8163-douglas.dtb
 diff --git a/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
 new file mode 100644
-index 000000000..c492a30fd
+index 000000000..49be06023
 --- /dev/null
 +++ b/arch/arm64/boot/dts/mediatek/mt8163-douglas.dts
 @@ -0,0 +1,1109 @@
@@ -291,7 +291,7 @@ index 000000000..c492a30fd
 +		#address-cells = <2>;
 +		#size-cells = <2>;
 +		ranges;
-+		bootargs = "clk_ignore_unused regulator_ignore_unused pd_ignore_unused irqchip.gicv2_force_probe=1 console=tty0 ignore_loglevel loglevel=8 panic=1";
++		bootargs = "clk_ignore_unused regulator_ignore_unused pd_ignore_unused irqchip.gicv2_force_probe=1 console=tty0 loglevel=4 panic=1";
 +
 +		framebuffer0: framebuffer@98600000 {
 +			compatible = "simple-framebuffer";
@@ -1327,7 +1327,7 @@ index 29a8e444d..f55c4685f 100644
  }
  
 diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
-index 44c4d79bd..c77479cee 100644
+index 44c4d79bd..255b46365 100644
 --- a/arch/arm64/kernel/setup.c
 +++ b/arch/arm64/kernel/setup.c
 @@ -13,6 +13,7 @@
@@ -1338,7 +1338,7 @@ index 44c4d79bd..c77479cee 100644
  #include <linux/console.h>
  #include <linux/cache.h>
  #include <linux/screen_info.h>
-@@ -178,16 +179,74 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
+@@ -178,16 +179,110 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
  	early_fdt_ptr = fixmap_remap_fdt(dt_phys, &fdt_size, PAGE_KERNEL);
  }
  
@@ -1362,7 +1362,42 @@ index 44c4d79bd..c77479cee 100644
 +	return 0;
 +}
 +
-+/* Read linux,initrd-start/end from the FDT LK handed over (x0). */
++static char douglas_lk_extra_cmdline[COMMAND_LINE_SIZE] __initdata;
++
++/*
++ * The LK bootargs are the vendor's (console=ttyMT0, root=/dev/ram, ...) plus
++ * whatever the boot.img cmdline carried. Keep only the postmarketOS tokens
++ * (pmos_*, pmos.*) so the initramfs can find its partitions by UUID.
++ */
++static void __init douglas_pick_lk_cmdline(const void *fdt, int node)
++{
++	int len;
++	const char *args = fdt_getprop(fdt, node, "bootargs", &len);
++	const char *p, *end;
++
++	if (!args || len <= 0)
++		return;
++	end = args + strnlen(args, len);
++	for (p = args; p < end;) {
++		const char *tok = p;
++
++		while (p < end && *p != ' ')
++			p++;
++		if (p - tok > 5 && !strncmp(tok, "pmos", 4) && (tok[4] == '_' || tok[4] == '.')) {
++			size_t have = strlen(douglas_lk_extra_cmdline);
++
++			if (have + 1 + (p - tok) < sizeof(douglas_lk_extra_cmdline)) {
++				douglas_lk_extra_cmdline[have] = ' ';
++				memcpy(douglas_lk_extra_cmdline + have + 1, tok, p - tok);
++				douglas_lk_extra_cmdline[have + 1 + (p - tok)] = '\0';
++			}
++		}
++		while (p < end && *p == ' ')
++			p++;
++	}
++}
++
++/* Read linux,initrd-start/end (and the pmos_* bootargs) from the FDT LK handed over (x0). */
 +static void __init douglas_initrd_from_lk_fdt(phys_addr_t lk_phys)
 +{
 +	int size = 0, node;
@@ -1377,6 +1412,7 @@ index 44c4d79bd..c77479cee 100644
 +	node = fdt_path_offset(fdt, "/chosen");
 +	if (node < 0)
 +		return;
++	douglas_pick_lk_cmdline(fdt, node);
 +	start = lk_chosen_u64(fdt, node, "linux,initrd-start");
 +	end = lk_chosen_u64(fdt, node, "linux,initrd-end");
 +	if (start && end > start) {
@@ -1415,7 +1451,7 @@ index 44c4d79bd..c77479cee 100644
  		pr_crit("\n"
  			"Error: invalid device tree blob at physical address %pa (virtual address 0x%px)\n"
  			"The dtb must be 8-byte aligned and must not exceed 2 MB in size\n"
-@@ -202,9 +261,7 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
+@@ -202,9 +297,7 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
  		while (true)
  			cpu_relax();
  	}
@@ -1426,7 +1462,7 @@ index 44c4d79bd..c77479cee 100644
  
  	name = of_flat_dt_get_machine_name();
  	if (!name)
-@@ -287,6 +344,77 @@ u64 cpu_logical_map(unsigned int cpu)
+@@ -287,6 +380,77 @@ u64 cpu_logical_map(unsigned int cpu)
  	return __cpu_logical_map[cpu];
  }
  
@@ -1504,7 +1540,7 @@ index 44c4d79bd..c77479cee 100644
  void __init __no_sanitize_address setup_arch(char **cmdline_p)
  {
  	setup_initial_init_mm(_stext, _etext, _edata, _end);
-@@ -301,9 +429,35 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+@@ -301,9 +465,37 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
  	arm64_use_ng_mappings = kaslr_requires_kpti();
  
  	early_fixmap_init();
@@ -1529,6 +1565,8 @@ index 44c4d79bd..c77479cee 100644
 +
  	setup_machine_fdt(__fdt_pointer);
 +	kmark('B');			/* DTB scanned, memory/chosen known */
++	if (douglas_lk_extra_cmdline[0])
++		strlcat(boot_command_line, douglas_lk_extra_cmdline, COMMAND_LINE_SIZE);
 +
 +	/*
 +	 * NOTE: do NOT touch the MTK RGU watchdog here. Early experiments
@@ -1540,7 +1578,7 @@ index 44c4d79bd..c77479cee 100644
  
  	/*
  	 * Initialise the static keys early as they may be enabled by the
-@@ -311,6 +465,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+@@ -311,6 +503,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
  	 */
  	jump_label_init();
  	parse_early_param();
@@ -1548,7 +1586,7 @@ index 44c4d79bd..c77479cee 100644
  
  	/*
  	 * Unmask asynchronous aborts and fiq after bringing up possible
-@@ -332,8 +487,10 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+@@ -332,8 +525,10 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
  	     pr_warn(FW_BUG "Kernel image misaligned at boot, please fix your bootloader!");
  
  	arm64_memblock_init();
