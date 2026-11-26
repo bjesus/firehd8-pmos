@@ -2742,6 +2742,67 @@ index 68fb5ca4b..d67784fa5 100644
  	depends on NET && RFKILL
  	select CFG80211
  	select CRC32
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_core.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_core.c
+index f4c8c4be6..76d5395d5 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_core.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_core.c
+@@ -624,14 +624,14 @@ static INT32 wmt_core_stp_init(VOID)
+ 		osal_assert(0);
+ 		return -1;
+ 	}
+-	pr_err("ECHO_STP_INIT: hifType=%u using_btif=%d\n",
++	pr_debug("ECHO_STP_INIT: hifType=%u using_btif=%d\n",
+ 	       pctx->wmtHifConf.hifType,
+ 	       pctx->wmtHifConf.hifType == WMT_HIF_BTIF);
+ 	/* 4 <1> open stp */
+ 	ctrlPa1 = 0;
+ 	ctrlPa2 = 0;
+ 	iRet = wmt_core_ctrl(WMT_CTRL_STP_OPEN, &ctrlPa1, &ctrlPa2);
+-	pr_err("ECHO_STP_OPEN: ret=%d hifType=%u\n", iRet, pctx->wmtHifConf.hifType);
++	pr_debug("ECHO_STP_OPEN: ret=%d hifType=%u\n", iRet, pctx->wmtHifConf.hifType);
+ 	if (iRet) {
+ 		WMT_ERR_FUNC("WMT-CORE: wmt open stp\n");
+ 		return -2;
+@@ -846,7 +846,7 @@ static INT32 wmt_core_hw_check(VOID)
+ 
+ static INT32 opfunc_hif_conf(P_WMT_OP pWmtOp)
+ {
+-	pr_err("ECHO_HIFCONF: raw type=%lu data1=%lu data2=%lu data3=%lu\n",
++	pr_debug("ECHO_HIFCONF: raw type=%lu data1=%lu data2=%lu data3=%lu\n",
+ 	       (unsigned long)pWmtOp->au4OpData[0],
+ 	       (unsigned long)pWmtOp->au4OpData[1],
+ 	       (unsigned long)pWmtOp->au4OpData[2],
+@@ -866,7 +866,7 @@ static INT32 opfunc_hif_conf(P_WMT_OP pWmtOp)
+ 	}
+ 
+ 	osal_memcpy(&gMtkWmtCtx.wmtHifConf, &pWmtOp->au4OpData[0], osal_sizeof(gMtkWmtCtx.wmtHifConf));
+-	pr_err("ECHO_HIFCONF: installed type=%u BTIF=%u\n",
++	pr_debug("ECHO_HIFCONF: installed type=%u BTIF=%u\n",
+ 	       gMtkWmtCtx.wmtHifConf.hifType, WMT_HIF_BTIF);
+ 	return 0;
+ 
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_func.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_func.c
+index 624764253..973686801 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_func.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_func.c
+@@ -647,7 +647,7 @@ INT32 wmt_func_wifi_on(P_WMT_IC_OPS pOps, P_WMT_GEN_CONF pConf)
+ 	if (NULL != mtk_wcn_wlan_probe) {
+ 
+ 		WMT_INFO_FUNC("WMT-FUNC: wmt wlan func on before wlan probe\n");
+-		pr_err("ECHO_WMT_STATE: wifi_func_on ready=%d coredump=%d cb=%p\n",
++		pr_debug("ECHO_WMT_STATE: wifi_func_on ready=%d coredump=%d cb=%p\n",
+ 		       mtk_wcn_stp_is_ready(), mtk_wcn_stp_coredump_start_get(),
+ 		       mtk_wcn_wlan_probe);
+ 		WMT_INFO_FUNC("ECHO_WMT_STATE: site=wifi_before_probe ready=%d coredump=%d\n",
+@@ -657,7 +657,7 @@ INT32 wmt_func_wifi_on(P_WMT_IC_OPS pOps, P_WMT_GEN_CONF pConf)
+ 			return -1;
+ 		}
+ 		iRet = (*mtk_wcn_wlan_probe) ();
+-		pr_err("ECHO_WMT_STATE: wifi_func_on probe_ret=%d ready_after=%d coredump_after=%d\n",
++		pr_debug("ECHO_WMT_STATE: wifi_func_on probe_ret=%d ready_after=%d coredump_after=%d\n",
+ 		       iRet, mtk_wcn_stp_is_ready(), mtk_wcn_stp_coredump_start_get());
+ 		if (iRet) {
+ 			WMT_ERR_FUNC("WMT-FUNC: wmt call wlan probe fail(%d)\n", iRet);
 diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_ic_soc.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_ic_soc.c
 index 4c5b3c9a6..a1251b9bb 100644
 --- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/core/wmt_ic_soc.c
@@ -2766,10 +2827,97 @@ index 4c5b3c9a6..a1251b9bb 100644
  	}
  
  #if CFG_WMT_PATCH_DL_OPTM
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/stp_btif.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/stp_btif.c
+index d1c5ed2d3..bf6dc628d 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/stp_btif.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/stp_btif.c
+@@ -79,9 +79,9 @@ INT32 mtk_wcn_consys_stp_btif_open(VOID)
+ 	INT32 iRet = -1;
+ 	INT32 tx_ret;
+ 
+-	pr_err("ECHO_BTIF_OPEN: before id=%lx ref=%p\n", stpBtifId, pBtifRef);
++	pr_debug("ECHO_BTIF_OPEN: before id=%lx ref=%p\n", stpBtifId, pBtifRef);
+ 	iRet = mtk_wcn_btif_open(BTIF_OWNER_NAME, pBtifRef);
+-	pr_err("ECHO_BTIF_OPEN: open ret=%d id=%lx ref=%p\n", iRet, stpBtifId, pBtifRef);
++	pr_debug("ECHO_BTIF_OPEN: open ret=%d id=%lx ref=%p\n", iRet, stpBtifId, pBtifRef);
+ 	if (iRet) {
+ 		WMT_WARN_FUNC("STP open btif fail(%d)\n", iRet);
+ 		return -1;
+@@ -90,7 +90,7 @@ INT32 mtk_wcn_consys_stp_btif_open(VOID)
+ 
+ 	tx_ret = mtk_wcn_stp_register_if_tx(STP_BTIF_IF_TX,
+ 					    (MTK_WCN_STP_IF_TX) mtk_wcn_consys_stp_btif_tx);
+-	pr_err("ECHO_BTIF_OPEN: TX callback registered slot=%d ret=%d\n",
++	pr_debug("ECHO_BTIF_OPEN: TX callback registered slot=%d ret=%d\n",
+ 	       STP_BTIF_IF_TX, tx_ret);
+ 	if (tx_ret)
+ 		return tx_ret;
+@@ -164,7 +164,7 @@ INT32 mtk_wcn_consys_stp_btif_tx(const UINT8 *pBuf, const UINT32 len, UINT32 *wr
+ 	wr_count = mtk_wcn_btif_write(stpBtifId, pBuf, len);
+ 
+ 	if (wr_count < 0 || wr_count == 0)
+-		pr_err("ECHO_BTIF_TX: write=%d len=%u\n", wr_count, len);
++		pr_debug("ECHO_BTIF_TX: write=%d len=%u\n", wr_count, len);
+ 
+ 	if (wr_count < 0) {
+ 		WMT_ERR_FUNC("mtk_wcn_btif_write err(%d)\n", wr_count);
+@@ -182,7 +182,7 @@ INT32 mtk_wcn_consys_stp_btif_tx(const UINT8 *pBuf, const UINT32 len, UINT32 *wr
+ 		osal_sleep_ms(STP_BTIF_TX_RTY_DLY);
+ 		written = mtk_wcn_btif_write(stpBtifId, pBuf + wr_count, len - wr_count);
+ 		if (written <= 0)
+-			pr_err("ECHO_BTIF_TX: retry offset=%d requested=%u ret=%d\n",
++			pr_debug("ECHO_BTIF_TX: retry offset=%d requested=%u ret=%d\n",
+ 			       wr_count, len - wr_count, written);
+ 		if (written < 0) {
+ 			WMT_ERR_FUNC("mtk_wcn_btif_write err(%d)when do recovered\n", written);
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/stp_exp.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/stp_exp.c
+index 62d5b340b..2d7dfe0b1 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/stp_exp.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/stp_exp.c
+@@ -170,7 +170,7 @@ VOID mtk_wcn_stp_set_if_tx_type(ENUM_STP_TX_IF_TYPE stp_if_type)
+ 		"UNKNOWN"
+ 	};
+ 	g_stp_if_type = stp_if_type;
+-	pr_err("ECHO_STP_IF_TX: selected=%d\n", stp_if_type);
++	pr_debug("ECHO_STP_IF_TX: selected=%d\n", stp_if_type);
+ 	pr_debug("[%s] set STP_IF_TX to %s.\n", __func__, ifType[stp_if_type]);
+ }
+ 
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/wmt_exp.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/wmt_exp.c
+index 02d29d90d..a766d39c0 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/wmt_exp.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pri/wmt_exp.c
+@@ -455,14 +455,14 @@ INT32 mtk_wcn_wmt_wlan_reg(P_MTK_WCN_WMT_WLAN_CB_INFO pWmtWlanCbInfo)
+ 	mtk_wcn_wlan_bus_tx_cnt_clr = pWmtWlanCbInfo->wlan_bus_cnt_clr_cb;
+ 
+ 	if (gWifiProbed) {
+-		pr_err("ECHO_WMT_STATE: direct_wlan_reg probed=%u ready=%d coredump=%d cb=%p\n",
++		pr_debug("ECHO_WMT_STATE: direct_wlan_reg probed=%u ready=%d coredump=%d cb=%p\n",
+ 		       gWifiProbed, mtk_wcn_stp_is_ready(),
+ 		       mtk_wcn_stp_coredump_start_get(), mtk_wcn_wlan_probe);
+ 		if (!mtk_wcn_stp_is_ready()) {
+-			pr_err("ECHO_WMT_STATE: refusing direct WLAN probe: STP not ready\n");
++			pr_debug("ECHO_WMT_STATE: refusing direct WLAN probe: STP not ready\n");
+ 			return -3;
+ 		}
+-		pr_err("ECHO_WMT_STATE: invoking direct WLAN probe\n");
++		pr_debug("ECHO_WMT_STATE: invoking direct WLAN probe\n");
+ 		iRet = (*mtk_wcn_wlan_probe) ();
+ 		if (!iRet) {
+ 			WMT_INFO_FUNC("call wlan probe OK when do wlan register to wmt\n");
 diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c
-index 36d6a13eb..ab3d69021 100644
+index 36d6a13eb..5aec5c756 100644
 --- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c
 +++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/linux/pub/stp_chrdev_bt.c
+@@ -142,7 +142,7 @@ static int mtk_bt_hci_open(struct hci_dev *hdev)
+ 
+ 	result = mtk_wcn_wmt_func_on(WMTDRV_TYPE_BT);
+ 	if (result != MTK_WCN_BOOL_TRUE) {
+-		pr_err("ECHO_BT_HCI_OPEN: FUNC_ON failed ret=%d\n", result);
++		pr_debug("ECHO_BT_HCI_OPEN: FUNC_ON failed ret=%d\n", result);
+ 		return -ENODEV;
+ 	}
+ 	pr_info("ECHO_BT_HCI_OPEN: FUNC_ON ok ready=%d\n",
 @@ -266,17 +266,47 @@ static void mtk_bt_hci_receive(const UINT8 *data, INT32 size)
  	mtk_hci.hdev->stat.byte_rx += size;
  }
@@ -2796,13 +2944,13 @@ index 36d6a13eb..ab3d69021 100644
 +			schedule_delayed_work(&mtk_hci_reg_work, msecs_to_jiffies(500));
 +			return;
 +		}
-+		pr_err("ECHO_BT_HCI: STP never became ready, HCI not registered\n");
++		pr_debug("ECHO_BT_HCI: STP never became ready, HCI not registered\n");
 +		return;
 +	}
 +	pr_info("ECHO_BT_HCI: STP ready after %d polls, registering hci\n", mtk_hci_reg_tries);
 +	result = hci_register_dev(mtk_hci.hdev);
 +	if (result) {
-+		pr_err("ECHO_BT_HCI: hci_register_dev failed %d\n", result);
++		pr_debug("ECHO_BT_HCI: hci_register_dev failed %d\n", result);
 +		hci_free_dev(mtk_hci.hdev);
 +		mtk_hci.hdev = NULL;
 +	}
@@ -2933,7 +3081,7 @@ index dc5a41206..12030f188 100644
  		pEmibaseaddr = ioremap_nocache(CONSYS_EMI_AP_PHY_BASE, CONSYS_EMI_MEM_SIZE);
  #endif
 diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/wmt_plat_alps.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/wmt_plat_alps.c
-index b8c4a41f3..bb00771a4 100644
+index b8c4a41f3..06855e72a 100644
 --- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/wmt_plat_alps.c
 +++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/common/mt8163/wmt_plat_alps.c
 @@ -693,8 +693,8 @@ static INT32 wmt_plat_gps_lna_ctrl(ENUM_PIN_STATE state)
@@ -2947,6 +3095,440 @@ index b8c4a41f3..bb00771a4 100644
  	}
  
  	gps_lna_init = pinctrl_lookup_state(consys_pinctrl, "gps_lna_state_init");
+@@ -937,44 +937,44 @@ VOID wmt_plat_dump_ap_state(const char *pszStage)
+ 	UINT32 pwr, ack, rst, axi_en, axi_sta;
+ 
+ 	if (!conn_reg.spm_base || !conn_reg.ap_rgu_base || !conn_reg.topckgen_base) {
+-		pr_err("ECHO_AP: %s bases unavailable\n", pszStage);
++		pr_debug("ECHO_AP: %s bases unavailable\n", pszStage);
+ 		aee_rr_rec_fiq_step(0xF0);
+ 		return;
+ 	}
+ 
+-	pr_err("ECHO_AP: %s begin\n", pszStage);
++	pr_debug("ECHO_AP: %s begin\n", pszStage);
+ 	aee_rr_rec_fiq_step(0xF1);
+-	pr_err("ECHO_AP: before power status\n");
++	pr_debug("ECHO_AP: before power status\n");
+ 	pwr = CONSYS_REG_READ(conn_reg.spm_base + CONSYS_TOP1_PWR_CTRL_OFFSET);
+ 	aee_rr_rec_fiq_step(0xF2);
+-	pr_err("ECHO_AP: power status=0x%08x\n", pwr);
++	pr_debug("ECHO_AP: power status=0x%08x\n", pwr);
+ 
+ 	aee_rr_rec_fiq_step(0xF3);
+-	pr_err("ECHO_AP: before power ack\n");
++	pr_debug("ECHO_AP: before power ack\n");
+ 	ack = CONSYS_REG_READ(conn_reg.spm_base + CONSYS_PWR_CONN_ACK_OFFSET);
+ 	aee_rr_rec_fiq_step(0xF4);
+-	pr_err("ECHO_AP: power ack=0x%08x\n", ack);
++	pr_debug("ECHO_AP: power ack=0x%08x\n", ack);
+ 
+ 	aee_rr_rec_fiq_step(0xF5);
+-	pr_err("ECHO_AP: before AP reset status\n");
++	pr_debug("ECHO_AP: before AP reset status\n");
+ 	rst = CONSYS_REG_READ(conn_reg.ap_rgu_base + CONSYS_CPU_SW_RST_OFFSET);
+ 	aee_rr_rec_fiq_step(0xF6);
+-	pr_err("ECHO_AP: AP reset status=0x%08x\n", rst);
++	pr_debug("ECHO_AP: AP reset status=0x%08x\n", rst);
+ 
+ 	aee_rr_rec_fiq_step(0xF7);
+-	pr_err("ECHO_AP: before AXI protection enable\n");
++	pr_debug("ECHO_AP: before AXI protection enable\n");
+ 	axi_en = CONSYS_REG_READ(conn_reg.topckgen_base + CONSYS_TOPAXI_PROT_EN_OFFSET);
+ 	aee_rr_rec_fiq_step(0xF8);
+-	pr_err("ECHO_AP: AXI protection enable=0x%08x\n", axi_en);
++	pr_debug("ECHO_AP: AXI protection enable=0x%08x\n", axi_en);
+ 
+ 	aee_rr_rec_fiq_step(0xF9);
+-	pr_err("ECHO_AP: before AXI protection status\n");
++	pr_debug("ECHO_AP: before AXI protection status\n");
+ 	axi_sta = CONSYS_REG_READ(conn_reg.topckgen_base + CONSYS_TOPAXI_PROT_STA1_OFFSET);
+ 	aee_rr_rec_fiq_step(0xFA);
+-	pr_err("ECHO_AP: AXI protection status=0x%08x\n", axi_sta);
++	pr_debug("ECHO_AP: AXI protection status=0x%08x\n", axi_sta);
+ 
+ 	aee_rr_rec_fiq_step(0xFB);
+-	pr_err("ECHO_AP: %s complete pwr=0x%08x ack=0x%08x rst=0x%08x axi_en=0x%08x axi_sta=0x%08x\n",
++	pr_debug("ECHO_AP: %s complete pwr=0x%08x ack=0x%08x rst=0x%08x axi_en=0x%08x axi_sta=0x%08x\n",
+ 	       pszStage, pwr, ack, rst, axi_en, axi_sta);
+ }
+ EXPORT_SYMBOL(wmt_plat_dump_ap_state);
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/common/wlan_lib.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/common/wlan_lib.c
+index ccf913de2..8ef4f5919 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/common/wlan_lib.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/common/wlan_lib.c
+@@ -993,7 +993,7 @@ static VOID echoWlanExecutionSnapshot(IN P_ADAPTER_T prAdapter, IN const char *p
+ 	HAL_MCR_RD(prAdapter, MCR_WASR, &wasr);
+ 	HAL_MCR_RD(prAdapter, MCR_D2HRM0R, &d2h0);
+ 	HAL_MCR_RD(prAdapter, MCR_D2HRM1R, &d2h1);
+-	pr_err("ECHO_FW_EXEC: %s CPUPCR=0x%08x WCIR=0x%08x POR=%u READY=%u "
++	pr_debug("ECHO_FW_EXEC: %s CPUPCR=0x%08x WCIR=0x%08x POR=%u READY=%u "
+ 	       "WASR=0x%08x D2HRM0=0x%08x D2HRM1=0x%08x cpu=%u jiffies=%lu\n",
+ 	       pszStage, cpupcr, wc, !!(wc & WCIR_POR_INDICATOR),
+ 	       !!(wc & WCIR_WLAN_READY), wasr, d2h0, d2h1,
+@@ -1037,7 +1037,7 @@ static VOID echoWlanCpuHistDump(VOID)
+ {
+ 	UINT_32 i, j, u4Best;
+ 
+-	pr_err("ECHO_FW_HIST: entries=%u\n", u4EchoFwCpuHistEntries);
++	pr_debug("ECHO_FW_HIST: entries=%u\n", u4EchoFwCpuHistEntries);
+ 	for (i = 0; i < u4EchoFwCpuHistEntries && i < 16; i++) {
+ 		u4Best = i;
+ 		for (j = i + 1; j < u4EchoFwCpuHistEntries; j++) {
+@@ -1050,7 +1050,7 @@ static VOID echoWlanCpuHistDump(VOID)
+ 			arEchoFwCpuHist[i] = arEchoFwCpuHist[u4Best];
+ 			arEchoFwCpuHist[u4Best] = rTmp;
+ 		}
+-		pr_err("ECHO_FW_HIST: rank=%u addr=0x%08x count=%u first=%lu last=%lu\n",
++		pr_debug("ECHO_FW_HIST: rank=%u addr=0x%08x count=%u first=%lu last=%lu\n",
+ 		       i, arEchoFwCpuHist[i].u4Address, arEchoFwCpuHist[i].u4Count,
+ 		       arEchoFwCpuHist[i].ulFirstJiffies, arEchoFwCpuHist[i].ulLastJiffies);
+ 	}
+@@ -1068,7 +1068,7 @@ static VOID echoWlanHifSnapshot(IN P_ADAPTER_T prAdapter, IN const char *pszStag
+ 	HAL_MCR_RD(prAdapter, MCR_H2DSM0R, &h2d);
+ 	HAL_MCR_RD(prAdapter, MCR_D2HRM0R, &d2h0);
+ 	HAL_MCR_RD(prAdapter, MCR_D2HRM1R, &d2h1);
+-	pr_err("ECHO_FW_STATE: %s WCIR=0x%08x WHLPCR=0x%08x WHISR=0x%08x "
++	pr_debug("ECHO_FW_STATE: %s WCIR=0x%08x WHLPCR=0x%08x WHISR=0x%08x "
+ 	       "WHIER=0x%08x WASR=0x%08x H2DSM0=0x%08x D2HRM0=0x%08x D2HRM1=0x%08x cpu=%u jiffies=%lu\n",
+ 	       pszStage, wc, lp, whisr, whier, wasr, h2d, d2h0, d2h1,
+ 	       raw_smp_processor_id(), jiffies);
+@@ -1374,11 +1374,11 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 			u4Status = WLAN_STATUS_FAILURE;
+ 			break;
+ 		}
+-		pr_err("ECHO_WLAN_HIF: driver-own acknowledged, before nicInitializeAdapter cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_HIF: driver-own acknowledged, before nicInitializeAdapter cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		/* 4 <1> Initialize the Adapter */
+ 		u4Status = nicInitializeAdapter(prAdapter);
+-		pr_err("ECHO_WLAN_HIF: after nicInitializeAdapter status=%u cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_HIF: after nicInitializeAdapter status=%u cpu=%u jiffies=%lu\n",
+ 		       u4Status, raw_smp_processor_id(), jiffies);
+ 		if (u4Status != WLAN_STATUS_SUCCESS) {
+ 			DBGLOG(INIT, ERROR, "nicInitializeAdapter failed!\n");
+@@ -1389,22 +1389,22 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 		/* init wake lock before interrupt enable and tx thread */
+ 		KAL_WAKE_LOCK_INIT(prAdapter, &prAdapter->rTxThreadWakeLock, "WLAN TX THREAD");
+ 
+-		pr_err("ECHO_WLAN_HIF: before nicInitSystemService cpu=%u jiffies=%lu\n", raw_smp_processor_id(), jiffies);
++		pr_debug("ECHO_WLAN_HIF: before nicInitSystemService cpu=%u jiffies=%lu\n", raw_smp_processor_id(), jiffies);
+ 		/* 4 <2> Initialize System Service (MGMT Memory pool and STA_REC) */
+ 		nicInitSystemService(prAdapter);
+-		pr_err("ECHO_WLAN_HIF: after nicInitSystemService cpu=%u jiffies=%lu\n", raw_smp_processor_id(), jiffies);
++		pr_debug("ECHO_WLAN_HIF: after nicInitSystemService cpu=%u jiffies=%lu\n", raw_smp_processor_id(), jiffies);
+ 
+-		pr_err("ECHO_WLAN_HIF: before nicTxInitialize cpu=%u jiffies=%lu\n", raw_smp_processor_id(), jiffies);
++		pr_debug("ECHO_WLAN_HIF: before nicTxInitialize cpu=%u jiffies=%lu\n", raw_smp_processor_id(), jiffies);
+ 		/* 4 <3> Initialize Tx */
+ 		nicTxInitialize(prAdapter);
+-		pr_err("ECHO_WLAN_HIF: after nicTxInitialize cpu=%u jiffies=%lu\n", raw_smp_processor_id(), jiffies);
++		pr_debug("ECHO_WLAN_HIF: after nicTxInitialize cpu=%u jiffies=%lu\n", raw_smp_processor_id(), jiffies);
+ 		wlanDefTxPowerCfg(prAdapter);
+ 
+ 		/* 4 <4> Initialize Rx */
+-		pr_err("ECHO_WLAN_STAGE: 100 enter RX init cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 100 enter RX init cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		nicRxInitialize(prAdapter);
+-		pr_err("ECHO_WLAN_STAGE: 101 exit RX init cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 101 exit RX init cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 
+ #if CFG_ENABLE_FW_DOWNLOAD
+@@ -1415,21 +1415,21 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 		}
+ 
+ 		/* 1. disable interrupt, download is done by polling mode only */
+-		pr_err("ECHO_WLAN_STAGE: 102 before disable IRQ cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 102 before disable IRQ cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		nicDisableInterrupt(prAdapter);
+-		pr_err("ECHO_WLAN_STAGE: 103 after disable IRQ cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 103 after disable IRQ cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 
+ 		/* 2. Initialize Tx Resource to fw download state */
+-		pr_err("ECHO_WLAN_STAGE: 104 before reset download TX resource cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 104 before reset download TX resource cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		nicTxInitResetResource(prAdapter);
+-		pr_err("ECHO_WLAN_STAGE: 105 after reset download TX resource cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 105 after reset download TX resource cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 
+ 		/* 3. FW download here */
+-		pr_err("ECHO_WLAN_STAGE: 110 enter firmware download size=%u load=0x%08x buf=%p cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 110 enter firmware download size=%u load=0x%08x buf=%p cpu=%u jiffies=%lu\n",
+ 		       u4FwImageFileLength, prRegInfo->u4LoadAddress, pvFwImageMapFile,
+ 		       raw_smp_processor_id(), jiffies);
+ 		u4FwLoadAddr = prRegInfo->u4LoadAddress;
+@@ -1437,7 +1437,7 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ #if CFG_ENABLE_FW_DIVIDED_DOWNLOAD
+ 		/* 3a. parse file header for decision of divided firmware download or not */
+ 		prFwHead = (P_FIRMWARE_DIVIDED_DOWNLOAD_T) pvFwImageMapFile;
+-		pr_err("ECHO_FW_IMAGE: magic=0x%08x crc=0x%08x entries=%u load=0x%08x size=%u cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_FW_IMAGE: magic=0x%08x crc=0x%08x entries=%u load=0x%08x size=%u cpu=%u jiffies=%lu\n",
+ 		       prFwHead->u4Signature, prFwHead->u4CRC, prFwHead->u4NumOfEntries,
+ 		       u4FwLoadAddr, u4FwImageFileLength, raw_smp_processor_id(), jiffies);
+ 
+@@ -1454,7 +1454,7 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 			DBGLOG(INIT, TRACE, "wlanAdapterStart(): fgValidHead == TRUE\n");
+ 
+ 			for (i = 0; i < prFwHead->u4NumOfEntries; i++) {
+-				pr_err("ECHO_FW_SECTION: index=%u offset=0x%08x target=0x%08x length=%u\n",
++				pr_debug("ECHO_FW_SECTION: index=%u offset=0x%08x target=0x%08x length=%u\n",
+ 				       i, prFwHead->arSection[i].u4Offset,
+ 				       prFwHead->arSection[i].u4DestAddr,
+ 				       prFwHead->arSection[i].u4Length);
+@@ -1462,7 +1462,7 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ #if CFG_START_ADDRESS_IS_1ST_SECTION_ADDR
+ 				if (i == 0) {
+ 					prRegInfo->u4StartAddress = prFwHead->arSection[i].u4DestAddr;
+-					pr_err("ECHO_FW_START_ADDR: first_section=0x%08x\n",
++					pr_debug("ECHO_FW_START_ADDR: first_section=0x%08x\n",
+ 					       prRegInfo->u4StartAddress);
+ 					DBGLOG(INIT, TRACE,
+ 					       "wlanAdapterStart(): FW start address 0x%08x\n",
+@@ -1537,12 +1537,12 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 
+ 		if (u4Status != WLAN_STATUS_SUCCESS)
+ 			break;
+-		pr_err("ECHO_WLAN_STAGE: 112 firmware download complete status=%u cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 112 firmware download complete status=%u cpu=%u jiffies=%lu\n",
+ 		       u4Status, raw_smp_processor_id(), jiffies);
+ 		echoWlanHifSnapshot(prAdapter, "after-download");
+ #if !CFG_ENABLE_FW_DOWNLOAD_ACK
+ 		/* Send INIT_CMD_ID_QUERY_PENDING_ERROR command and wait for response */
+-		pr_err("ECHO_WLAN_STAGE: 113 before firmware query-status cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 113 before firmware query-status cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		if (wlanImageQueryStatus(prAdapter) != WLAN_STATUS_SUCCESS) {
+ 			DBGLOG(INIT, ERROR, "Firmware download failed!\n");
+@@ -1554,12 +1554,12 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 		/* 4. send Wi-Fi Start command */
+ 		echoWlanCpuHistReset();
+ 		echoWlanPersistStage(ECHO_WLAN_PERSIST_DOWNLOAD);
+-		pr_err("ECHO_WLAN_STAGE: 114 firmware download/ACK path complete cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 114 firmware download/ACK path complete cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		echoWlanHifSnapshot(prAdapter, "before-start");
+ 		echoWlanExecutionSnapshot(prAdapter, "before-start");
+ 		DBGLOG(INIT, INFO, "<wifi> send Wi-Fi Start command\n");
+-		pr_err("ECHO_WLAN_STAGE: 115 before Wi-Fi start command addr=0x%08x enable=%u cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 115 before Wi-Fi start command addr=0x%08x enable=%u cpu=%u jiffies=%lu\n",
+ 		       prRegInfo->u4StartAddress, CFG_OVERRIDE_FW_START_ADDRESS,
+ 		       raw_smp_processor_id(), jiffies);
+ #if CFG_OVERRIDE_FW_START_ADDRESS
+@@ -1568,17 +1568,17 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 		wlanConfigWifiFunc(prAdapter, FALSE, 0);
+ #endif
+ 		echoWlanPersistStage(ECHO_WLAN_PERSIST_START);
+-		pr_err("ECHO_WLAN_STAGE: 116 after Wi-Fi start command cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 116 after Wi-Fi start command cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		echoWlanHifSnapshot(prAdapter, "after-start");
+ #endif
+ 
+-		pr_err("ECHO_WLAN_STAGE: 120 enter firmware-ready wait cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 120 enter firmware-ready wait cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		echoWlanPersistStage(ECHO_WLAN_PERSIST_READY_POLL);
+ 		/* Keep the ready-boundary candidate low-noise; no pre-poll MMIO warmup. */
+ 		u4EchoFwCpuHistEntries = 0;
+-		pr_err("ECHO_WLAN_STAGE: 120 histogram warmup skipped cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 120 histogram warmup skipped cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		DBGLOG(INIT, TRACE, "wlanAdapterStart(): Waiting for Ready bit..\n");
+ 		/* 4 <5> check Wi-Fi FW asserts ready bit */
+@@ -1587,7 +1587,7 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 			if (i == 0)
+ 				wmt_plat_dump_ap_state("before-ready-read");
+ 			if (i < 5 || (i % 100) == 0)
+-				pr_err("ECHO_WLAN_STAGE: 121 ready poll before read iter=%u mask=0x%08x cpu=%u jiffies=%lu\n",
++				pr_debug("ECHO_WLAN_STAGE: 121 ready poll before read iter=%u mask=0x%08x cpu=%u jiffies=%lu\n",
+ 				       i, (UINT_32) WCIR_WLAN_READY, raw_smp_processor_id(), jiffies);
+ 			aee_rr_rec_fiq_step(0xFC);
+ 			HAL_MCR_RD(prAdapter, MCR_WCIR, &u4Value);
+@@ -1599,29 +1599,29 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 				HAL_MCR_RD(prAdapter, MCR_D2HRM1R, &u4PollD2h1);
+ 				if ((u4PollCpupcr & 0xf0000000) == 0xf0000000)
+ 					echoWlanPersistStage(ECHO_WLAN_PERSIST_MAIN_EXEC);
+-				pr_err("ECHO_FW_POLL: iter=%u CPUPCR=0x%08x WCIR=0x%08x "
++				pr_debug("ECHO_FW_POLL: iter=%u CPUPCR=0x%08x WCIR=0x%08x "
+ 				       "D2HRM0=0x%08x D2HRM1=0x%08x cpu=%u jiffies=%lu\n",
+ 				       i, u4PollCpupcr, u4Value, u4PollD2h0, u4PollD2h1,
+ 				       raw_smp_processor_id(), jiffies);
+ 			}
+ 			if (i < 5 || (i % 100) == 0)
+-				pr_err("ECHO_WLAN_STAGE: 121 ready poll after read iter=%u WCIR=0x%08x mask=0x%08x cpu=%u jiffies=%lu\n",
++				pr_debug("ECHO_WLAN_STAGE: 121 ready poll after read iter=%u WCIR=0x%08x mask=0x%08x cpu=%u jiffies=%lu\n",
+ 				       i, u4Value, (UINT_32) WCIR_WLAN_READY, raw_smp_processor_id(), jiffies);
+ 
+ 			if (u4Value & WCIR_WLAN_READY) {
+-				pr_err("ECHO_WLAN_STAGE: 121 ready asserted iter=%u WCIR=0x%08x cpu=%u jiffies=%lu\n",
++				pr_debug("ECHO_WLAN_STAGE: 121 ready asserted iter=%u WCIR=0x%08x cpu=%u jiffies=%lu\n",
+ 				       i, u4Value, raw_smp_processor_id(), jiffies);
+ 				break;
+ 			} else {
+ 				if (i < 5)
+-					pr_err("ECHO_WLAN_STAGE: 121 before card/bus check iter=%u cpu=%u jiffies=%lu\n",
++					pr_debug("ECHO_WLAN_STAGE: 121 before card/bus check iter=%u cpu=%u jiffies=%lu\n",
+ 					       i, raw_smp_processor_id(), jiffies);
+ 				if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE || fgIsBusAccessFailed == TRUE) {
+ 					u4Status = WLAN_STATUS_FAILURE;
+ 					break;
+ 				}
+ 				if (i < 5)
+-					pr_err("ECHO_WLAN_STAGE: 121 card/bus check passed iter=%u cpu=%u jiffies=%lu\n",
++					pr_debug("ECHO_WLAN_STAGE: 121 card/bus check passed iter=%u cpu=%u jiffies=%lu\n",
+ 					       i, raw_smp_processor_id(), jiffies);
+ 				if (i >= CFG_RESPONSE_POLLING_TIMEOUT) {
+ 					UINT_32 u4MailBox0;
+@@ -1635,17 +1635,17 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 				}
+ 				i++;
+ 				if (i <= 5)
+-					pr_err("ECHO_WLAN_STAGE: 121 before ready sleep iter=%u cpu=%u jiffies=%lu\n",
++					pr_debug("ECHO_WLAN_STAGE: 121 before ready sleep iter=%u cpu=%u jiffies=%lu\n",
+ 					       i, raw_smp_processor_id(), jiffies);
+ 				kalMsleep(10);
+ 				if (i <= 5)
+-					pr_err("ECHO_WLAN_STAGE: 121 after ready sleep iter=%u cpu=%u jiffies=%lu\n",
++					pr_debug("ECHO_WLAN_STAGE: 121 after ready sleep iter=%u cpu=%u jiffies=%lu\n",
+ 					       i, raw_smp_processor_id(), jiffies);
+ 			}
+ 		}
+ 
+ 		echoWlanCpuHistDump();
+-		pr_err("ECHO_WLAN_STAGE: 122 firmware-ready wait exit status=%u WCIR=0x%08x iter=%u cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 122 firmware-ready wait exit status=%u WCIR=0x%08x iter=%u cpu=%u jiffies=%lu\n",
+ 		       u4Status, u4Value, i, raw_smp_processor_id(), jiffies);
+ 		if (u4Status == WLAN_STATUS_SUCCESS) {
+ 			/* 1. reset interrupt status */
+@@ -1657,25 +1657,25 @@ wlanAdapterStart(IN P_ADAPTER_T prAdapter,
+ 			nicTxResetResource(prAdapter);
+ 
+ 			/* 3. query for permanent address by polling */
+-			pr_err("ECHO_WLAN_STAGE: 130 before permanent-address command cpu=%u jiffies=%lu\n",
++			pr_debug("ECHO_WLAN_STAGE: 130 before permanent-address command cpu=%u jiffies=%lu\n",
+ 			       raw_smp_processor_id(), jiffies);
+ 			wlanQueryPermanentAddress(prAdapter);
+-			pr_err("ECHO_WLAN_STAGE: 131 after permanent-address command cpu=%u jiffies=%lu\n",
++			pr_debug("ECHO_WLAN_STAGE: 131 after permanent-address command cpu=%u jiffies=%lu\n",
+ 			       raw_smp_processor_id(), jiffies);
+ 
+ #if (CFG_SUPPORT_NIC_CAPABILITY == 1)
+ 			/* 4. query for NIC capability */
+-			pr_err("ECHO_WLAN_STAGE: 132 before NIC capability command cpu=%u jiffies=%lu\n",
++			pr_debug("ECHO_WLAN_STAGE: 132 before NIC capability command cpu=%u jiffies=%lu\n",
+ 			       raw_smp_processor_id(), jiffies);
+ 			wlanQueryNicCapability(prAdapter);
+-			pr_err("ECHO_WLAN_STAGE: 133 after NIC capability command cpu=%u jiffies=%lu\n",
++			pr_debug("ECHO_WLAN_STAGE: 133 after NIC capability command cpu=%u jiffies=%lu\n",
+ 			       raw_smp_processor_id(), jiffies);
+ #endif
+ 			/* 4.1 query for compiler flags */
+-			pr_err("ECHO_WLAN_STAGE: 134 before compiler-flags command cpu=%u jiffies=%lu\n",
++			pr_debug("ECHO_WLAN_STAGE: 134 before compiler-flags command cpu=%u jiffies=%lu\n",
+ 			       raw_smp_processor_id(), jiffies);
+ 			wlanQueryCompileFlags(prAdapter);
+-			pr_err("ECHO_WLAN_STAGE: 135 after compiler-flags command cpu=%u jiffies=%lu\n",
++			pr_debug("ECHO_WLAN_STAGE: 135 after compiler-flags command cpu=%u jiffies=%lu\n",
+ 			       raw_smp_processor_id(), jiffies);
+ 
+ 			/* 5. Override network address */
+@@ -3303,7 +3303,7 @@ WLAN_STATUS wlanConfigWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnable, IN
+ 	prInitCmdWifiStart = (P_INIT_CMD_WIFI_START) (prInitHifTxHeader->rInitWifiCmd.aucBuffer);
+ 	prInitCmdWifiStart->u4Override = (fgEnable == TRUE ? 1 : 0);
+ 	prInitCmdWifiStart->u4Address = u4StartAddress;
+-	pr_err("ECHO_FW_START_SUBMIT: cid=0x%02x seq=%u override=%u address=0x%08x info_len=%u cpu=%u jiffies=%lu\n",
++	pr_debug("ECHO_FW_START_SUBMIT: cid=0x%02x seq=%u override=%u address=0x%08x info_len=%u cpu=%u jiffies=%lu\n",
+ 	       prInitHifTxHeader->rInitWifiCmd.ucCID,
+ 	       prInitHifTxHeader->rInitWifiCmd.ucSeqNum,
+ 	       prInitCmdWifiStart->u4Override, prInitCmdWifiStart->u4Address,
+@@ -3340,7 +3340,7 @@ WLAN_STATUS wlanConfigWifiFunc(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnable, IN
+ 		mdelay(9);
+ 		echoWlanExecutionSnapshot(prAdapter, "after-start-10ms");
+ 
+-		pr_err("ECHO_FW_START_SUBMIT: tx_port_return status=%u; no start-command ACK is waited by this path cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_FW_START_SUBMIT: tx_port_return status=%u; no start-command ACK is waited by this path cpu=%u jiffies=%lu\n",
+ 		       u4Status, raw_smp_processor_id(), jiffies);
+ 
+ 		break;
+@@ -4202,7 +4202,7 @@ WLAN_STATUS wlanQueryNicCapability(IN P_ADAPTER_T prAdapter)
+ 	prAdapter->fgIsEepromUsed = (BOOLEAN) prEventNicCapability->ucEepromUsed;
+ 	prAdapter->fgIsEfuseValid = (BOOLEAN) prEventNicCapability->ucEfuseValid;
+ 	prAdapter->fgIsEmbbededMacAddrValid = (BOOLEAN) prEventNicCapability->ucMacAddrValid;
+-	pr_err("ECHO_WIFI_CAP: feature_set=0x%08x hw_5g_disabled=%u eeprom=%u efuse=%u\n",
++	pr_debug("ECHO_WIFI_CAP: feature_set=0x%08x hw_5g_disabled=%u eeprom=%u efuse=%u\n",
+ 	       prEventNicCapability->ucFeatureSet,
+ 	       prEventNicCapability->ucHw5GBandDisabled,
+ 	       prEventNicCapability->ucEepromUsed,
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/nic_pwr_mgt.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/nic_pwr_mgt.c
+index b4f4e4cdf..580bf1073 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/nic_pwr_mgt.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/nic_pwr_mgt.c
+@@ -330,12 +330,12 @@ BOOLEAN nicpmSetDriverOwn(IN P_ADAPTER_T prAdapter)
+ 
+ 	while (1) {
+ 		if (i == 0 || i == 1)
+-			pr_err("ECHO_WLAN_HIF: before WHLPCR read iter=%u base=%p cpu=%u jiffies=%lu irq=%u preempt=%x\n",
++			pr_debug("ECHO_WLAN_HIF: before WHLPCR read iter=%u base=%p cpu=%u jiffies=%lu irq=%u preempt=%x\n",
+ 			       i, HifInfo->HifRegBaseAddr, raw_smp_processor_id(), jiffies,
+ 			       irqs_disabled(), preempt_count());
+ 		HAL_MCR_RD(prAdapter, MCR_WHLPCR, &u4RegValue);
+ 		if (i == 0 || i == 1)
+-			pr_err("ECHO_WLAN_HIF: after WHLPCR read iter=%u value=0x%08x cpu=%u jiffies=%lu\n",
++			pr_debug("ECHO_WLAN_HIF: after WHLPCR read iter=%u value=0x%08x cpu=%u jiffies=%lu\n",
+ 			       i, u4RegValue, raw_smp_processor_id(), jiffies);
+ 
+ 		if (u4RegValue & WHLPCR_FW_OWN_REQ_SET) {
+@@ -350,7 +350,7 @@ BOOLEAN nicpmSetDriverOwn(IN P_ADAPTER_T prAdapter)
+ 			 * interconnect and prevent the hardware watchdog from being kicked.
+ 			 */
+ 			fgStatus = FALSE;
+-			pr_err("ECHO_WLAN_HIF: driver-own timeout elapsed=%u loops=%u WHLPCR=0x%08x removed=%u busfail=%u resetting=%u\n",
++			pr_debug("ECHO_WLAN_HIF: driver-own timeout elapsed=%u loops=%u WHLPCR=0x%08x removed=%u busfail=%u resetting=%u\n",
+ 			       kalGetTimeTick() - u4CurrTick, i, u4RegValue,
+ 			       kalIsCardRemoved(prAdapter->prGlueInfo), fgIsBusAccessFailed,
+ 			       fgIsResetting);
+@@ -359,12 +359,12 @@ BOOLEAN nicpmSetDriverOwn(IN P_ADAPTER_T prAdapter)
+ 		if ((i & (LP_OWN_BACK_CLR_OWN_ITERATION - 1)) == 0) {
+ 			/* Software get LP ownership - per 256 iterations. */
+ 			if (i == 0)
+-				pr_err("ECHO_WLAN_HIF: before WHLPCR own-clear write value=0x%08lx base=%p cpu=%u jiffies=%lu\n",
++				pr_debug("ECHO_WLAN_HIF: before WHLPCR own-clear write value=0x%08lx base=%p cpu=%u jiffies=%lu\n",
+ 				       (unsigned long)WHLPCR_FW_OWN_REQ_CLR,
+ 				       HifInfo->HifRegBaseAddr, raw_smp_processor_id(), jiffies);
+ 			HAL_MCR_WR(prAdapter, MCR_WHLPCR, WHLPCR_FW_OWN_REQ_CLR);
+ 			if (i == 0)
+-				pr_err("ECHO_WLAN_HIF: after WHLPCR own-clear write cpu=%u jiffies=%lu\n",
++				pr_debug("ECHO_WLAN_HIF: after WHLPCR own-clear write cpu=%u jiffies=%lu\n",
+ 				       raw_smp_processor_id(), jiffies);
+ 		}
+ 
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/nic_tx.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/nic_tx.c
+index 9cc34689c..0e0780514 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/nic_tx.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/nic_tx.c
+@@ -2111,14 +2111,14 @@ WLAN_STATUS nicTxInitCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN
+ 
+ 	/* <4> Write frame to data port */
+ 	if (prInitTxHeader->rInitWifiCmd.ucCID == INIT_CMD_ID_WIFI_START)
+-		pr_err("ECHO_FW_START_SUBMIT: before HIF TX port write bytes=%u port=%u cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_FW_START_SUBMIT: before HIF TX port write bytes=%u port=%u cpu=%u jiffies=%lu\n",
+ 		       u2OverallBufferLength, ucPortIdx, raw_smp_processor_id(), jiffies);
+ 	HAL_WRITE_TX_PORT(prAdapter,
+ 			  ucPortIdx,
+ 			  (UINT_32) u2OverallBufferLength,
+ 			  (PUINT_8) pucOutputBuf, (UINT_32) prAdapter->u4CoalescingBufCachedSize);
+ 	if (prInitTxHeader->rInitWifiCmd.ucCID == INIT_CMD_ID_WIFI_START)
+-		pr_err("ECHO_FW_START_SUBMIT: after HIF TX port write cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_FW_START_SUBMIT: after HIF TX port write cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 
+ 	return WLAN_STATUS_SUCCESS;
 diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/que_mgt.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/que_mgt.c
 index 843e295aa..bf52af4af 100644
 --- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/nic/que_mgt.c
@@ -2960,6 +3542,194 @@ index 843e295aa..bf52af4af 100644
  		QUEUE_INSERT_TAIL(prReturnedQue, (P_QUE_ENTRY_T) prSwRfb);
  		DBGLOG(QM, WARN, "Reordering for a NULL ReorderQueParm\n");
  		/* ASSERT(0); */
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/os/linux/gl_init.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/os/linux/gl_init.c
+index 60e018b02..b3f794f55 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/os/linux/gl_init.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/os/linux/gl_init.c
+@@ -3829,10 +3829,10 @@ static INT_32 wlanProbe(PVOID pvData)
+ 		/* 4 <4> Setup IRQ */
+ 		prWlandevInfo = &arWlanDevInfo[i4DevIdx];
+ 
+-		pr_err("ECHO_WLAN_STAGE: 090 before IRQ registration cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 090 before IRQ registration cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		i4Status = glBusSetIrq(prWdev->netdev, NULL, *((P_GLUE_INFO_T *) netdev_priv(prWdev->netdev)));
+-		pr_err("ECHO_WLAN_STAGE: 091 after IRQ registration status=%d cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 091 after IRQ registration status=%d cpu=%u jiffies=%lu\n",
+ 		       i4Status, raw_smp_processor_id(), jiffies);
+ 
+ 		if (i4Status != WLAN_STATUS_SUCCESS) {
+@@ -3932,30 +3932,30 @@ static INT_32 wlanProbe(PVOID pvData)
+ 			}
+ 
+ 			if (kalFirmwareImageMapping(prGlueInfo, &prFwBuffer, &u4FwSize) == NULL) {
+-				pr_err("ECHO_WLAN_STAGE: 109 firmware mapping failed cpu=%u jiffies=%lu\n",
++				pr_debug("ECHO_WLAN_STAGE: 109 firmware mapping failed cpu=%u jiffies=%lu\n",
+ 				       raw_smp_processor_id(), jiffies);
+ 				i4Status = -EIO;
+ 				DBGLOG(INIT, ERROR, "kalFirmwareImageMapping fail!\n");
+ 				goto bailout;
+ 			} else {
+-				pr_err("ECHO_WLAN_STAGE: 110 firmware mapped size=%u buf=%p first=%02x%02x%02x%02x cpu=%u jiffies=%lu\n",
++				pr_debug("ECHO_WLAN_STAGE: 110 firmware mapped size=%u buf=%p first=%02x%02x%02x%02x cpu=%u jiffies=%lu\n",
+ 				       u4FwSize, prFwBuffer,
+ 				       ((PUINT_8) prFwBuffer)[0], ((PUINT_8) prFwBuffer)[1],
+ 				       ((PUINT_8) prFwBuffer)[2], ((PUINT_8) prFwBuffer)[3],
+ 				       raw_smp_processor_id(), jiffies);
+-				pr_err("ECHO_WLAN_STAGE: 111 enter wlanAdapterStart cpu=%u jiffies=%lu\n",
++				pr_debug("ECHO_WLAN_STAGE: 111 enter wlanAdapterStart cpu=%u jiffies=%lu\n",
+ 				       raw_smp_processor_id(), jiffies);
+ 
+ 				if (wlanAdapterStart(prAdapter, prRegInfo, prFwBuffer,
+ 					u4FwSize) != WLAN_STATUS_SUCCESS) {
+ 					i4Status = -EIO;
+ 				}
+-				pr_err("ECHO_WLAN_STAGE: 141 exit wlanAdapterStart status=%d cpu=%u jiffies=%lu\n",
++				pr_debug("ECHO_WLAN_STAGE: 141 exit wlanAdapterStart status=%d cpu=%u jiffies=%lu\n",
+ 				       i4Status, raw_smp_processor_id(), jiffies);
+ 			}
+ 
+ 			kalFirmwareImageUnmapping(prGlueInfo, NULL, prFwBuffer);
+-			pr_err("ECHO_WLAN_STAGE: 142 firmware unmapped status=%d cpu=%u jiffies=%lu\n",
++			pr_debug("ECHO_WLAN_STAGE: 142 firmware unmapped status=%d cpu=%u jiffies=%lu\n",
+ 			       i4Status, raw_smp_processor_id(), jiffies);
+ 
+ bailout:
+@@ -4076,11 +4076,11 @@ static INT_32 wlanProbe(PVOID pvData)
+ #endif
+ 
+ 		/* 4 <3> Register the card */
+-		pr_err("ECHO_WLAN_STAGE: 150 enter wlanNetRegister cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 150 enter wlanNetRegister cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		DBGLOG(INIT, TRACE, "wlanNetRegister...\n");
+ 		i4DevIdx = wlanNetRegister(prWdev);
+-		pr_err("ECHO_WLAN_STAGE: 151 exit wlanNetRegister status=%d cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_STAGE: 151 exit wlanNetRegister status=%d cpu=%u jiffies=%lu\n",
+ 		       i4DevIdx, raw_smp_processor_id(), jiffies);
+ 		if (i4DevIdx < 0) {
+ 			i4Status = -ENXIO;
+@@ -4147,7 +4147,7 @@ static INT_32 wlanProbe(PVOID pvData)
+ 		DBGLOG(INIT, ERROR, "wlanProbe: init MET procfs failed\n");
+ #endif
+ 	DBGLOG(INIT, TRACE, "wlanProbe final i4Status=%d\n", i4Status);
+-	pr_err("ECHO_RET: wlanProbe final i4Status=%d\n", i4Status);
++	pr_debug("ECHO_RET: wlanProbe final i4Status=%d\n", i4Status);
+ 	return i4Status;
+ }				/* end of wlanProbe() */
+ 
+diff --git a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/os/linux/hif/ahb/ahb.c b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/os/linux/hif/ahb/ahb.c
+index b96dd0120..f3d90f68d 100644
+--- a/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/os/linux/hif/ahb/ahb.c
++++ b/drivers/misc/mediatek/mt8163-connectivity/conn_soc/drv_wlan/mt_wifi/wlan/os/linux/hif/ahb/ahb.c
+@@ -515,7 +515,7 @@ WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
+ 	}
+ 
+ 	Ret = HifAhbProbe();
+-	pr_err("ECHO_RET: HifAhbProbe=%d\n", Ret);
++	pr_debug("ECHO_RET: HifAhbProbe=%d\n", Ret);
+ #else
+ 
+ 	Ret = platform_driver_register(&MtkPltmAhbDriver);
+@@ -609,10 +609,10 @@ VOID glSetHifInfo(GLUE_INFO_T *GlueInfo, ULONG ulCookie)
+ 	HifInfo->DmaOps = NULL;
+ 
+ 	/* read chip ID */
+-	pr_err("ECHO_WLAN_HIF: before WCIR read base=%p cpu=%u jiffies=%lu\n",
++	pr_debug("ECHO_WLAN_HIF: before WCIR read base=%p cpu=%u jiffies=%lu\n",
+ 	       HifInfo->HifRegBaseAddr, raw_smp_processor_id(), jiffies);
+ 	HifInfo->ChipID = HIF_REG_READL(HifInfo, MCR_WCIR) & 0xFFFF;
+-	pr_err("ECHO_WLAN_HIF: after WCIR read value=0x%04x cpu=%u jiffies=%lu\n",
++	pr_debug("ECHO_WLAN_HIF: after WCIR read value=0x%04x cpu=%u jiffies=%lu\n",
+ 	       HifInfo->ChipID, raw_smp_processor_id(), jiffies);
+ 	if (HifInfo->ChipID == 0x0321 || HifInfo->ChipID == 0x0335 || HifInfo->ChipID == 0x0337)
+ 		HifInfo->ChipID = 0x6735;	/* Denali ChipID transition */
+@@ -633,7 +633,7 @@ VOID glSetHifInfo(GLUE_INFO_T *GlueInfo, ULONG ulCookie)
+ 			DBGLOG(INIT, ERROR, "[WiFi/HIF][CCF]hold HIF clk_wifi_dma failed: %d\n", clk_ret);
+ 		} else {
+ 			HifInfo->fgWifiDmaClkHeld = TRUE;
+-			pr_err("ECHO_WLAN_HIF: held wifi-dma clock rate=%lu\n",
++			pr_debug("ECHO_WLAN_HIF: held wifi-dma clock rate=%lu\n",
+ 			       clk_get_rate(HifInfo->clk_wifi_dma));
+ 		}
+ 	}
+@@ -696,7 +696,7 @@ VOID glClearHifInfo(GLUE_INFO_T *GlueInfo)
+ 	if (GlueInfo->rHifInfo.fgWifiDmaClkHeld == TRUE) {
+ 		clk_disable_unprepare(GlueInfo->rHifInfo.clk_wifi_dma);
+ 		GlueInfo->rHifInfo.fgWifiDmaClkHeld = FALSE;
+-		pr_err("ECHO_WLAN_HIF: released wifi-dma clock\n");
++		pr_debug("ECHO_WLAN_HIF: released wifi-dma clock\n");
+ 	}
+ #endif
+ 	iounmap(GlueInfo->rHifInfo.HifRegBaseAddr);
+@@ -1662,7 +1662,7 @@ static irqreturn_t HifAhbISR(IN int Irq, IN void *Arg)
+ 	/* Init */
+ 	IsrCnt++;
+ 	if (IsrCnt <= 5 || (IsrCnt % 1000) == 0)
+-		pr_err("ECHO_WLAN_IRQ: enter count=%u irq=%d cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_IRQ: enter count=%u irq=%d cpu=%u jiffies=%lu\n",
+ 		       IsrCnt, Irq, raw_smp_processor_id(), jiffies);
+ 	ASSERT(prNetDevice);
+ 	GlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDevice));
+@@ -1682,7 +1682,7 @@ static irqreturn_t HifAhbISR(IN int Irq, IN void *Arg)
+ 
+ 	HIF_REG_WRITEL(HifInfo, MCR_WHLPCR, WHLPCR_INT_EN_CLR);
+ 	if (IsrCnt <= 5 || (IsrCnt % 1000) == 0)
+-		pr_err("ECHO_WLAN_IRQ: after INT_EN_CLR count=%u cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_WLAN_IRQ: after INT_EN_CLR count=%u cpu=%u jiffies=%lu\n",
+ 		       IsrCnt, raw_smp_processor_id(), jiffies);
+ 
+ #if 0
+@@ -1775,9 +1775,9 @@ static int HifAhbProbe(VOID)
+ 	int i4RailRet;
+ 	int i4PreviousStage = aee_rr_curr_fiq_step();
+ 
+-	pr_err("ECHO_RET: previous persistent stage=0x%02x\n", i4PreviousStage);
++	pr_debug("ECHO_RET: previous persistent stage=0x%02x\n", i4PreviousStage);
+ 	aee_rr_rec_fiq_step(0xE1);
+-	pr_err("ECHO_RET: HifAhbProbe enter cpu=%u jiffies=%lu\n",
++	pr_debug("ECHO_RET: HifAhbProbe enter cpu=%u jiffies=%lu\n",
+ 	       raw_smp_processor_id(), jiffies);
+ 
+ 	/* ASSERT(dev); */
+@@ -1807,7 +1807,7 @@ static int HifAhbProbe(VOID)
+ 		/* hwPowerOn(MT6325_POWER_LDO_VCN33, VOL_3300, "WLAN"); */
+ 		i4RailRet = mtk_wcn_consys_hw_wifi_paldo_ctrl(1);
+ 		if (i4RailRet) {
+-			pr_err("ECHO_WIFI_RAIL: WLAN probe blocked ret=%d\n", i4RailRet);
++			pr_debug("ECHO_WIFI_RAIL: WLAN probe blocked ret=%d\n", i4RailRet);
+ 			return i4RailRet;
+ 		}
+ #else				/*for MT6572/82/92 */
+@@ -1826,16 +1826,16 @@ static int HifAhbProbe(VOID)
+ #else
+ 	i4ProbeRet = pfWlanProbe((PVOID) &HifAhbPDev->dev);
+ #endif /* CONF_HIF_DEV_MISC */
+-	pr_err("ECHO_RET: pfWlanProbe=%d cpu=%u jiffies=%lu\n",
++	pr_debug("ECHO_RET: pfWlanProbe=%d cpu=%u jiffies=%lu\n",
+ 	       i4ProbeRet, raw_smp_processor_id(), jiffies);
+ 	if (i4ProbeRet != WLAN_STATUS_SUCCESS) {
+-		pr_err("ECHO_RET: pfWlanProbe failure, invoking remove cpu=%u jiffies=%lu\n",
++		pr_debug("ECHO_RET: pfWlanProbe failure, invoking remove cpu=%u jiffies=%lu\n",
+ 		       raw_smp_processor_id(), jiffies);
+ 		pfWlanRemove();
+ 		Ret = -1;
+ 	}
+ 
+-	pr_err("ECHO_RET: HifAhbProbe return=%d cpu=%u jiffies=%lu\n",
++	pr_debug("ECHO_RET: HifAhbProbe return=%d cpu=%u jiffies=%lu\n",
+ 	       Ret, raw_smp_processor_id(), jiffies);
+ 	aee_rr_rec_fiq_step(0xE8);
+ 	return Ret;
+@@ -2069,7 +2069,7 @@ static int HifAhbPltmProbe(IN struct platform_device *PDev)
+ 		WmtCb.wlan_bus_cnt_get_cb = HifAhbBusCntGet;
+ 		WmtCb.wlan_bus_cnt_clr_cb = HifAhbBusCntClr;
+ 		i4WmtRet = mtk_wcn_wmt_wlan_reg(&WmtCb);
+-		pr_err("ECHO_RET: mtk_wcn_wmt_wlan_reg=%d\n", i4WmtRet);
++		pr_debug("ECHO_RET: mtk_wcn_wmt_wlan_reg=%d\n", i4WmtRet);
+ 		if (i4WmtRet) {
+ 			mtk_wcn_wmt_wlan_unreg();
+ 			if (i4WmtRet == -3)
 diff --git a/drivers/mmc/host/mtk-sd.c b/drivers/mmc/host/mtk-sd.c
 index 32c34900a..24bead93f 100644
 --- a/drivers/mmc/host/mtk-sd.c
