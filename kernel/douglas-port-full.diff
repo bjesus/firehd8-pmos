@@ -1327,7 +1327,7 @@ index 29a8e444d..f55c4685f 100644
  }
  
 diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
-index 44c4d79bd..255b46365 100644
+index 44c4d79bd..be714196d 100644
 --- a/arch/arm64/kernel/setup.c
 +++ b/arch/arm64/kernel/setup.c
 @@ -13,6 +13,7 @@
@@ -1338,7 +1338,7 @@ index 44c4d79bd..255b46365 100644
  #include <linux/console.h>
  #include <linux/cache.h>
  #include <linux/screen_info.h>
-@@ -178,16 +179,110 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
+@@ -178,16 +179,117 @@ asmlinkage void __init early_fdt_map(u64 dt_phys)
  	early_fdt_ptr = fixmap_remap_fdt(dt_phys, &fdt_size, PAGE_KERNEL);
  }
  
@@ -1383,7 +1383,14 @@ index 44c4d79bd..255b46365 100644
 +
 +		while (p < end && *p != ' ')
 +			p++;
-+		if (p - tok > 5 && !strncmp(tok, "pmos", 4) && (tok[4] == '_' || tok[4] == '.')) {
++		/*
++		 * Forward pmos.* debug switches, but not the pmos_*_uuid pair: a
++		 * boot.img from one build must still boot a rootfs from another,
++		 * and without the UUIDs the initramfs falls back to the pmOS_boot
++		 * and pmOS_root partition labels.
++		 */
++		if (p - tok > 5 && !strncmp(tok, "pmos", 4) && (tok[4] == '_' || tok[4] == '.') &&
++		    !strnstr(tok, "_uuid=", p - tok)) {
 +			size_t have = strlen(douglas_lk_extra_cmdline);
 +
 +			if (have + 1 + (p - tok) < sizeof(douglas_lk_extra_cmdline)) {
@@ -1451,7 +1458,7 @@ index 44c4d79bd..255b46365 100644
  		pr_crit("\n"
  			"Error: invalid device tree blob at physical address %pa (virtual address 0x%px)\n"
  			"The dtb must be 8-byte aligned and must not exceed 2 MB in size\n"
-@@ -202,9 +297,7 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
+@@ -202,9 +304,7 @@ static void __init setup_machine_fdt(phys_addr_t dt_phys)
  		while (true)
  			cpu_relax();
  	}
@@ -1462,7 +1469,7 @@ index 44c4d79bd..255b46365 100644
  
  	name = of_flat_dt_get_machine_name();
  	if (!name)
-@@ -287,6 +380,77 @@ u64 cpu_logical_map(unsigned int cpu)
+@@ -287,6 +387,77 @@ u64 cpu_logical_map(unsigned int cpu)
  	return __cpu_logical_map[cpu];
  }
  
@@ -1540,7 +1547,7 @@ index 44c4d79bd..255b46365 100644
  void __init __no_sanitize_address setup_arch(char **cmdline_p)
  {
  	setup_initial_init_mm(_stext, _etext, _edata, _end);
-@@ -301,9 +465,37 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+@@ -301,9 +472,37 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
  	arm64_use_ng_mappings = kaslr_requires_kpti();
  
  	early_fixmap_init();
@@ -1578,7 +1585,7 @@ index 44c4d79bd..255b46365 100644
  
  	/*
  	 * Initialise the static keys early as they may be enabled by the
-@@ -311,6 +503,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+@@ -311,6 +510,7 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
  	 */
  	jump_label_init();
  	parse_early_param();
@@ -1586,7 +1593,7 @@ index 44c4d79bd..255b46365 100644
  
  	/*
  	 * Unmask asynchronous aborts and fiq after bringing up possible
-@@ -332,8 +525,10 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
+@@ -332,8 +532,10 @@ void __init __no_sanitize_address setup_arch(char **cmdline_p)
  	     pr_warn(FW_BUG "Kernel image misaligned at boot, please fix your bootloader!");
  
  	arm64_memblock_init();

@@ -2,7 +2,7 @@
 _flavor="amazon-douglas"
 pkgname=linux-amazon-douglas
 pkgver=6.1.178
-pkgrel=106
+pkgrel=107
 pkgdesc="Mainline-based kernel for the Amazon Fire HD 8 (2017, douglas), MT8163"
 arch="aarch64"
 _carch="arm64"
@@ -29,7 +29,7 @@ makedepends="
 	python3
 	zstd
 "
-_tag="$pkgver-douglas7"
+_tag="$pkgver-douglas8"
 _config="config-$_flavor.$arch"
 source="
 	$pkgname-$_tag.tar.gz::$url/archive/refs/tags/$_tag.tar.gz
@@ -71,7 +71,7 @@ package() {
 }
 
 sha512sums="
-74da9a7740a951d4e5977796a19f73dd6ce57edad1553a7c51514d0fd1cb77137b667badfcc43f322447cc10c4ca82ddf635271368f451041145c2a773dfeaee  linux-amazon-douglas-6.1.178-douglas7.tar.gz
+93ef39c5b999677c68a5df502f38693d531c7ec7ab1caa20068d33019dce3af41237db2eaeecc6817580311f82492badde6e3306d94e30479f609ce388d7a74e  linux-amazon-douglas-6.1.178-douglas8.tar.gz
 ef1f998aff7a1824f1d5af3f16ff345ce204594bb337f4bf8da1d786c7e0e84534297b8189d7bc870294c934af18e7fb078672ee099f1afd8342d6a189ba42ff  config-amazon-douglas.aarch64
 69f11f157bb17f32fa649ed1a0aa0fdf30027147408335d33e4cdde898fd12825445d9d2f67b4df6b52fec2e744ce5979393f9b95de2732d8974bbe22e9c4389  mt8163-douglas-lk.dtb
 "

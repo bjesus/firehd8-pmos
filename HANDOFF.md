@@ -203,7 +203,15 @@ locally-administered MAC derived from the eMMC CID (`02:08:22:d7:ae:a6` on this 
 `DOUGLAS_WIFI_MAC=xx:..` overrides). Verified live: driver takes the file (`nvram_enable=1`),
 address stable across Wi-Fi power cycles. The factory MAC sits in Amazon's IDME data,
 which LK exposes in its FDT (`/idme/mac_addr`); reading it from the LK FDT like the initrd
-address would give the real one (not done). Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
+address would give the real one (not done).
+
+**UUID trap (2026-11-26 night).** Flashing a boot.img from CI build A onto a rootfs from
+build B dropped the tablet into the pmOS debug shell: every pmbootstrap build gives its
+partitions fresh UUIDs, and since douglas2 the kernel forwarded `pmos_root_uuid` from the
+boot.img cmdline, so the initramfs searched for a partition that did not exist. douglas8
+stops forwarding the two `pmos_*_uuid` tokens (labels pmOS_boot/pmOS_root are used
+instead; other `pmos.*` switches still pass through). Rule: test boot images from the
+device's own build, or from douglas8 on. Recovery was TWRP + the v0.2.1 boot image. Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
 rootfs via adb, hash-verified, reboots only on success); reboot into TWRP from pmOS with
 `sudo sh -c 'printf "boot-recovery\0\0\0" | dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync; reboot -f'`.
 

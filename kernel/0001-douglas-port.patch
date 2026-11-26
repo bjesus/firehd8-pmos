@@ -1,7 +1,7 @@
 From 83a78c5ba40a104f677211cf7aaccb64f2b5c2c3 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sat, 21 Nov 2026 22:18:42 +0100
-Subject: [PATCH 01/13] arm64: mt8163-douglas: mainline port of the Amazon Fire
+Subject: [PATCH 01/14] arm64: mt8163-douglas: mainline port of the Amazon Fire
  HD 8 (2017)
 
 Built-in device tree for douglas (LK's FDT is unusable), NT35521 DSI panel,
@@ -3287,7 +3287,7 @@ index 000000000..977ccb45d
 From 471771633e4a16f87e4f84e91fbde034a932c86e Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sat, 21 Nov 2026 23:58:04 +0100
-Subject: [PATCH 02/13] mt8163-douglas: suspend fixes, thermal calibration,
+Subject: [PATCH 02/14] mt8163-douglas: suspend fixes, thermal calibration,
  watchdog bark, boot-stall fix
 
 - scpsys: keep the display power domain always on; the DSI controller runs on
@@ -3346,7 +3346,7 @@ index 250ce2dcd..417d8e192 100644
 From eb13032d1f32f627966958cc942c6689234f0918 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sun, 22 Nov 2026 00:26:55 +0100
-Subject: [PATCH 03/13] mt8163-connectivity: register the BlueZ HCI bridge only
+Subject: [PATCH 03/14] mt8163-connectivity: register the BlueZ HCI bridge only
  once STP is ready
 
 hci_register_dev() queues the core's setup power-on immediately; on MT8163
@@ -3466,7 +3466,7 @@ index 36d6a13eb..ab3d69021 100644
 From a911117c73d542074ccdf499a7f8aa680184691a Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sun, 22 Nov 2026 00:30:50 +0100
-Subject: [PATCH 04/13] drm/mediatek: douglas: keep DSI powered across the
+Subject: [PATCH 04/14] drm/mediatek: douglas: keep DSI powered across the
  CRTC's final vblank wait
 
 The bridge's post_disable gated the DSI clocks before mtk_drm_crtc_atomic_disable
@@ -3538,7 +3538,7 @@ index 6c4fe4ac8..e052dea64 100644
 From 79425471636fd5e5c9151408ed3f02df8c330466 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Sun, 22 Nov 2026 12:47:56 +0100
-Subject: [PATCH 05/13] arm64: dts: mt8163-douglas: enable the PMIC long-press
+Subject: [PATCH 05/14] arm64: dts: mt8163-douglas: enable the PMIC long-press
  hardware reset
 
 An 8 s Power hold resets the board through the MT6323 regardless of the
@@ -3573,7 +3573,7 @@ index 4cd041f55..08d6b0184 100644
 From 3c4051757e8c699dbd035b4414cdb75f95c73095 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Wed, 25 Nov 2026 23:28:54 +0100
-Subject: [PATCH 06/13] arm64: douglas: take the initrd location from the
+Subject: [PATCH 06/14] arm64: douglas: take the initrd location from the
  LK-provided FDT
 
 The kernel boots from its built-in DTB and ignores the vendor tree LK
@@ -3666,7 +3666,7 @@ index a690aef3c..c77479cee 100644
 From 63d58e1c3c8c7bb275b75305701c0951f52be0a8 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Wed, 25 Nov 2026 23:42:20 +0100
-Subject: [PATCH 07/13] douglas: bring the board drivers in-tree; sensors in
+Subject: [PATCH 07/14] douglas: bring the board drivers in-tree; sensors in
  the device tree
 
 drivers/misc/douglas: Volume Up key (MT8163 KPD poll) and the MT6323
@@ -5276,7 +5276,7 @@ index 000000000..3e361f723
 From 6cfc453d0588636ce3faea120cf9cb681fdb805f Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Thu, 26 Nov 2026 09:33:45 +0100
-Subject: [PATCH 08/13] douglas: quiet boot, pass pmos_* tokens from the LK
+Subject: [PATCH 08/14] douglas: quiet boot, pass pmos_* tokens from the LK
  command line
 
 The device-tree bootargs drop the debugging flood (ignore_loglevel,
@@ -5375,7 +5375,7 @@ index c77479cee..255b46365 100644
 From 8cd001aecb8d0bd0bce38880dcd5b38de6bf43c9 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Thu, 26 Nov 2026 11:03:27 +0100
-Subject: [PATCH 09/13] mt8163-connectivity: demote the ECHO_* bring-up prints
+Subject: [PATCH 09/14] mt8163-connectivity: demote the ECHO_* bring-up prints
  to pr_debug
 
 They were pr_err for the port bring-up; on a running system the WLAN HIF
@@ -6198,7 +6198,7 @@ index b96dd0120..f3d90f68d 100644
 From 32698f211ff56d15b799e1866a1dcfca862c247b Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Thu, 26 Nov 2026 11:16:03 +0100
-Subject: [PATCH 10/13] usb: musb: mediatek: douglas starts OTG as a B-device,
+Subject: [PATCH 10/14] usb: musb: mediatek: douglas starts OTG as a B-device,
  role "device"
 
 No ID pin on the tablet, so the role switch sat at "none" forever and
@@ -6236,7 +6236,7 @@ index 2f26c2461..e92d291ac 100644
 From 3e86b3e55136d3f799140b5f61c0449f57963728 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Thu, 26 Nov 2026 13:04:07 +0100
-Subject: [PATCH 11/13] douglas: USB role switch reads "device" while OTG is
+Subject: [PATCH 11/14] douglas: USB role switch reads "device" while OTG is
  undecided; BT/WMT bring-up prints to pr_debug
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
@@ -6340,7 +6340,7 @@ index e92d291ac..f60ce8078 100644
 From 62352fed7b19d35c2459043b256889b5c1e3adf3 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Thu, 26 Nov 2026 15:20:50 +0100
-Subject: [PATCH 12/13] usb: musb: mediatek: register the role switch on the
+Subject: [PATCH 12/14] usb: musb: mediatek: register the role switch on the
  controller device
 
 postmarketOS usb-signaller finds the UDC as <role-switch>/device/udc/; on
@@ -6378,7 +6378,7 @@ index f60ce8078..12588f961 100644
 From 31212b79d49886bee7512f44af3cdd4179ea20a0 Mon Sep 17 00:00:00 2001
 From: Yo'av Moshe <github@yoavmoshe.com>
 Date: Thu, 26 Nov 2026 19:18:33 +0100
-Subject: [PATCH 13/13] usb: musb: mediatek: fix NULL deref registering the
+Subject: [PATCH 13/14] usb: musb: mediatek: fix NULL deref registering the
  role switch on the controller
 
 glue->musb_pdev is assigned after platform_device_register_full() returns,
@@ -6424,6 +6424,44 @@ index 12588f961..65ef8b5fd 100644
  		if (ret)
  			return ret;
  	}
+-- 
+2.56.1
+
+
+From e047d0419bbe530bda4a085fa7850f94000451db Mon Sep 17 00:00:00 2001
+From: Yo'av Moshe <github@yoavmoshe.com>
+Date: Thu, 26 Nov 2026 21:41:35 +0100
+Subject: [PATCH 14/14] arm64: douglas: do not forward pmos_*_uuid from the LK
+ command line
+
+A boot.img from one pmbootstrap build must boot a rootfs from another;
+without the UUIDs the pmOS initramfs falls back to the partition labels.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+---
+ arch/arm64/kernel/setup.c | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/arch/arm64/kernel/setup.c b/arch/arm64/kernel/setup.c
+index 255b46365..be714196d 100644
+--- a/arch/arm64/kernel/setup.c
++++ b/arch/arm64/kernel/setup.c
+@@ -220,7 +220,14 @@ static void __init douglas_pick_lk_cmdline(const void *fdt, int node)
+ 
+ 		while (p < end && *p != ' ')
+ 			p++;
+-		if (p - tok > 5 && !strncmp(tok, "pmos", 4) && (tok[4] == '_' || tok[4] == '.')) {
++		/*
++		 * Forward pmos.* debug switches, but not the pmos_*_uuid pair: a
++		 * boot.img from one build must still boot a rootfs from another,
++		 * and without the UUIDs the initramfs falls back to the pmOS_boot
++		 * and pmOS_root partition labels.
++		 */
++		if (p - tok > 5 && !strncmp(tok, "pmos", 4) && (tok[4] == '_' || tok[4] == '.') &&
++		    !strnstr(tok, "_uuid=", p - tok)) {
+ 			size_t have = strlen(douglas_lk_extra_cmdline);
+ 
+ 			if (have + 1 + (p - tok) < sizeof(douglas_lk_extra_cmdline)) {
 -- 
 2.56.1
 
