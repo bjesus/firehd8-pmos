@@ -2,7 +2,7 @@
 pkgname=amazon-douglas-config
 pkgdesc="Amazon Fire HD 8 (2017) configuration: Wi-Fi/BT bring-up, sleep hook, sensors, defaults"
 pkgver=1
-pkgrel=1
+pkgrel=2
 url="https://github.com/bjesus/firehd8-pmos"
 license="MIT"
 arch="noarch"
@@ -49,7 +49,8 @@ package() {
 	install -Dm644 "$srcdir"/99-douglas-accel.rules "$pkgdir"/usr/lib/udev/rules.d/99-douglas-accel.rules
 	install -Dm644 "$srcdir"/90-douglas-usb-role.rules "$pkgdir"/usr/lib/udev/rules.d/90-douglas-usb-role.rules
 	# the Wi-Fi driver cannot change its MAC; ACD confuses it
-	install -Dm644 "$srcdir"/20-douglas-nm.conf "$pkgdir"/usr/lib/NetworkManager/conf.d/20-douglas.conf
+	# 90-: must sort after pmOS's 50-random-mac.conf, which turns randomization back on
+	install -Dm644 "$srcdir"/20-douglas-nm.conf "$pkgdir"/usr/lib/NetworkManager/conf.d/90-douglas.conf
 	# schedutil governor, 1.5 A charging (kernel defaults are conservative on purpose)
 	install -Dm644 "$srcdir"/douglas-tmpfiles.conf "$pkgdir"/usr/lib/tmpfiles.d/douglas.conf
 	# board drivers that are not device-tree bound

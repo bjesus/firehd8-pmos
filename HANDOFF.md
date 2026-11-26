@@ -169,7 +169,17 @@ bjesus/pmos-packages/amazon-douglas/edge (GitHub Pages) and created the release 
 `douglas-pmos-boot.img`, `douglas-pmos-rootfs.img.gz`, `SHA256SUMS`. Later kernel/config
 updates reach installed tablets with `sudo apk upgrade` followed by
 `sudo dd if=/boot/boot.img of=/dev/mmcblk0p5 bs=1M conv=fsync` (boot-deploy regenerates
-/boot/boot.img; flash_method is none, so nothing writes the partition automatically yet). Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
+/boot/boot.img; flash_method is none, so nothing writes the partition automatically yet).
+Done once on 2026-11-26 13:11: r103→r104 via `apk upgrade`, boot.img rewritten, rebooted into
+kernel #105 with the USB role fix active. Open after that: systemd-resolved aborts on an
+assert once per boot and is restarted (works afterwards; pmOS/musl issue, not ours);
+the audio backend resolved to PulseAudio although the pmbootstrap config asked for
+PipeWire (both installed, `pipewire-pulse.socket` complains); the Wi-Fi MAC changed on
+every boot because pmOS's `50-random-mac.conf` re-enables NM's scan randomization and
+the driver applies it to the hardware address, so the config package now installs its
+NM snippet as `90-douglas.conf` (pkgrel 2). Note the GPT labels: LK boots `boot_x`
+(mmcblk0p5) and `recovery_x` (p6); `boot` (p17) and `recovery` (p18) are the inactive
+A/B copies. Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
 rootfs via adb, hash-verified, reboots only on success); reboot into TWRP from pmOS with
 `sudo sh -c 'printf "boot-recovery\0\0\0" | dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync; reboot -f'`.
 
