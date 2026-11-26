@@ -179,7 +179,20 @@ every boot because pmOS's `50-random-mac.conf` re-enables NM's scan randomizatio
 the driver applies it to the hardware address, so the config package now installs its
 NM snippet as `90-douglas.conf` (pkgrel 2). Note the GPT labels: LK boots `boot_x`
 (mmcblk0p5) and `recovery_x` (p6); `boot` (p17) and `recovery` (p18) are the inactive
-A/B copies. Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
+A/B copies.
+
+**Incident 2026-11-26 afternoon (douglas6 boot loop).** Tag douglas6 moved the musb role
+switch onto the controller device via `glue->musb_pdev`, which is only assigned after the
+child probe returns; the registration runs inside that probe, so the kernel dereferenced
+NULL and `panic=1` made a reboot loop. It was published to the package repo by the
+push-to-main workflow and installed on the tablet with `apk upgrade`. Recovery: TWRP
+(Power + Volume Down during the loop) and the v0.2.1 boot image (r104) back on p5. Fixes:
+douglas7 passes `musb->controller`; packages are published **only from tags**, after the
+boot image from the CI artifact was booted on the device; the broken r105 apk was removed
+from bjesus/pmos-packages (the index there is stale until the next tag publishes); the
+tablet's `/etc/apk/world` pins `linux-amazon-douglas=6.1.178-r104` until r106 is released.
+Note the publish step uses `rsync --delete`, so the repo only ever holds the latest build's
+packages. Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
 rootfs via adb, hash-verified, reboots only on success); reboot into TWRP from pmOS with
 `sudo sh -c 'printf "boot-recovery\0\0\0" | dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync; reboot -f'`.
 
