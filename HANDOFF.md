@@ -215,7 +215,12 @@ device's own build, or from douglas8 on. Recovery was TWRP + the v0.2.1 boot ima
 douglas8 verified on the device 2026-11-26 22:03: kernel #108, role switch
 `musb-hdrc.2.auto-role-switch` with `device/udc/musb-hdrc.2.auto` beneath it, usb-signaller
 `mode_request` → `developer_mode` (the "Unknown USB mode" notice is gone). v0.2.2 = kernel
-r107 (douglas8) + amazon-douglas-config r4 (stable MAC). Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
+r107 (douglas8) + amazon-douglas-config r4 (stable MAC).
+Final state 2026-11-27 00:xx: v0.2.2 released and published; the tablet upgraded itself from
+the repo to r107/r4 and `/dev/mmcblk0p5` matches the regenerated `/boot/boot.img`
+(sha ea4e47620393); running kernel #108. Lesson from the last step: never `dd /boot/boot.img`
+blindly after `apk upgrade`; the Pages index can lag ~10 min and the file may still be the
+previous (possibly bad) kernel's image, so check the installed package version first. Flashing: `/home/bjesus/.claude/jobs/94ca6784/tmp/flash-pmos.sh` (boot +
 rootfs via adb, hash-verified, reboots only on success); reboot into TWRP from pmOS with
 `sudo sh -c 'printf "boot-recovery\0\0\0" | dd of=/dev/mmcblk0p12 bs=16 count=1 conv=fsync; reboot -f'`.
 
