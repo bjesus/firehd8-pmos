@@ -169,7 +169,9 @@ bjesus/pmos-packages/amazon-douglas/edge (GitHub Pages) and created the release 
 `douglas-pmos-boot.img`, `douglas-pmos-rootfs.img.gz`, `SHA256SUMS`. Later kernel/config
 updates reach installed tablets with `sudo apk upgrade` followed by
 `sudo dd if=/boot/boot.img of=/dev/mmcblk0p5 bs=1M conv=fsync` (boot-deploy regenerates
-/boot/boot.img; flash_method is none, so nothing writes the partition automatically yet).
+/boot/boot.img; since device-amazon-douglas r2 `deviceinfo_flash_kernel_on_update="true"` with
+`deviceinfo_flash_fastboot_partition_kernel="boot_x"` makes boot-deploy dd it to p5 itself, so the
+manual dd is gone).
 Done once on 2026-11-26 13:11: r103→r104 via `apk upgrade`, boot.img rewritten, rebooted into
 kernel #105 with the USB role fix active. Open after that: systemd-resolved aborts on an
 assert once per boot and is restarted (works afterwards; pmOS/musl issue, not ours);

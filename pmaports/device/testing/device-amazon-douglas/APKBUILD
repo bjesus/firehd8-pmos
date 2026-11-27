@@ -3,7 +3,7 @@
 pkgname=device-amazon-douglas
 pkgdesc="Amazon Fire HD 8 (2017)"
 pkgver=1
-pkgrel=1
+pkgrel=2
 url="https://github.com/bjesus/firehd8-pmos"
 license="MIT"
 arch="aarch64"
@@ -30,6 +30,6 @@ package() {
 }
 
 sha512sums="
-b6f51bfd13bbda8b4f50ef3c35103f84250fbce44c5027ad436ad255b576c059ab9930780112f015e268a96990c35dcae88d4a55f993197f09532a3ad48fcb28  deviceinfo
+00b53c77285688b3277b789e809f2cddd4afd87ea4031493b29c8a0ad016217642c8b5d733d56c5f856c89f1d56ba9ee49d893837e19801d493165540ddddde3  deviceinfo
 8fab76d1e320157d3fae122ca3e1fc03518751f8ac95b26b5e8524ce73dd4311608e336dc187a3d9dfee6955f988f527fe2e9676c1b2e5e07892c0dfe8b36d2f  modules-initfs
 "

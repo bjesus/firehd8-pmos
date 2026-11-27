@@ -104,9 +104,7 @@ The rootfs write takes about 15 minutes over USB 2. The first boot grows the roo
 filesystem to the whole partition, then Phosh starts.
 
 **Updating:** `sudo apk upgrade` on the tablet. A new kernel package regenerates
-`/boot/boot.img`; copy it to the boot partition with
-`sudo dd if=/boot/boot.img of=/dev/mmcblk0p5 bs=1M conv=fsync` (automating this is on
-the list).
+`/boot/boot.img` and boot-deploy writes it to the boot partition (`boot_x`) by itself.
 
 **Firmware notice.** `firmware-amazon-douglas` carries the MT6625L Wi-Fi/Bluetooth
 firmware (`WMT_SOC.cfg`, `ROMv2_lm_patch_*`, `WIFI_RAM_CODE_8163`), the Goodix touch

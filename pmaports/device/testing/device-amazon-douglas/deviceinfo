@@ -28,7 +28,12 @@ deviceinfo_append_dtb="true"
 
 # Bootloader related: Amazon LK (unlocked with amonet), boot.img on mmcblk0p5,
 # rootfs on mmcblk0p16 (userdata). Flashed from TWRP with dd, see the README.
-deviceinfo_flash_method="none"
+# "fastboot" is only the name of the Android-style layout for boot-deploy; the actual
+# write on kernel updates is a dd by boot-deploy to the partition labelled boot_x (p5),
+# so `apk upgrade` is the whole update. TWRP is still how the images are installed.
+deviceinfo_flash_method="fastboot"
+deviceinfo_flash_kernel_on_update="true"
+deviceinfo_flash_fastboot_partition_kernel="boot_x"
 deviceinfo_generate_bootimg="true"
 deviceinfo_kernel_cmdline="bootopt=64S3,32N2,64N2"
 deviceinfo_flash_pagesize="2048"
